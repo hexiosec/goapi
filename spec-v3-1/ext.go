@@ -22,9 +22,5 @@ func HandleExtensions(value []byte) (map[string]any, error) {
 		}
 	}
 
-	if len(raw) > 0 {
-		return raw, nil
-	}
-
-	return nil, nil
+	return raw, nil
 }

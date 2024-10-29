@@ -3,19 +3,19 @@
 {{- end }}
 
 {{ define "operation-wrapper-name" }}
-{{- .OperationId | toGoPascalCase }}
+{{- .OperationID | toGoPascalCase }}
 {{- end }}
 
 {{ define "operation-path-name" }}
-{{- .OperationId | toGoPascalCase }}Path
+{{- .OperationID | toGoPascalCase }}Path
 {{- end }}
 
 {{ define "operation-handler-name" }}
-{{- .OperationId | toGoPascalCase }}Handler
+{{- .OperationID | toGoPascalCase }}Handler
 {{- end }}
 
 {{ define "operation-middleware-name" }}
-{{- .OperationId | toGoPascalCase }}Validator
+{{- .OperationID | toGoPascalCase }}Validator
 {{- end }}
 
 {{ define "param-arg-name" }}
@@ -30,5 +30,21 @@
 {{- $args = append $args $arg }}
 {{- end }}
 {{- end }}
+
+{{- with get .Extensions "x-request-body-type" }}
+{{- $arg := cat "body" (cat "*" . | nospace) }}
+{{- $args = append $args $arg }}
+{{- end }}
+
 {{- $args | join ", " }}
+{{- end }}
+
+{{ define "operation-return" }}
+{{- with get .Extensions "x-response-body-type" }}(*{{ . }}, error)
+{{- else }}error
+{{- end }}
+{{- end }}
+
+{{ define "ref-target-name" }}
+{{- splitList "/" . | last }}
 {{- end }}

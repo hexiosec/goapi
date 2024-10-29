@@ -13,21 +13,53 @@ import (
 
 func Validate(doc *specv31.Document) error {
 	operationIDs := []string{}
+	defaultTagAdded := false
 
 	for key, path := range doc.Paths {
 		for method, op := range path.AsMap() {
 
 			// If operationId is empty, generate one based on the path
-			if op.OperationId == "" {
-				op.OperationId = genOperationID(key, method)
-				log.Warn().Msgf("Generated operationId \"%s\" for %s:%s", op.OperationId, strings.ToUpper(method), key)
+			if op.OperationID == "" {
+				op.OperationID = genOperationID(key, method)
+				log.Warn().Msgf("Generated operationId \"%s\" for %s:%s", op.OperationID, strings.ToUpper(method), key)
 			}
 
 			// Error if operationId is not unique (inc. if generated)
-			if slices.Contains(operationIDs, op.OperationId) {
-				return fmt.Errorf("operation: ID %s not unique for %s:%s", op.OperationId, strings.ToUpper(method), key)
+			if slices.Contains(operationIDs, op.OperationID) {
+				return fmt.Errorf("operation: ID %s not unique for %s:%s", op.OperationID, strings.ToUpper(method), key)
 			} else {
-				operationIDs = append(operationIDs, op.OperationId)
+				operationIDs = append(operationIDs, op.OperationID)
+			}
+
+			// If no tags specified, add "default"
+			if len(op.Tags) == 0 {
+				op.Tags = []string{"default"}
+				if !defaultTagAdded {
+					doc.Tags = append(doc.Tags, &specv31.Tag{
+						Name:        "default",
+						Description: "Default tag for untagged routes",
+					})
+				}
+			}
+
+			// If requestBody is set and not a ref, move to schemas
+			if op.RequestBody != nil {
+				if op.RequestBody.Value != nil {
+					for mime, mto := range op.RequestBody.Value.Content {
+						if mime == "application/json" {
+							if mto.Schema != nil {
+								if mto.Schema.Value != nil {
+									key := strcase.ToGoPascal(op.OperationID) + "JSONRequest"
+									log.Debug().Msgf("Moving MediaTypeObject schema from operation %s to %s", op.OperationID, key)
+									doc.Components.Schemas[key] = mto.Schema.Value
+									mto.Schema.Ref = "#/components/schemas/" + key
+									mto.Schema.Value = nil
+									op.Extensions["x-goapi-json-requestbody-object"] = key
+								}
+							}
+						}
+					}
+				}
 			}
 
 			// DeRef params
@@ -38,6 +70,30 @@ func Validate(doc *specv31.Document) error {
 				if err := param.Value.Schema.DeRef(doc.Components); err != nil {
 					return err
 				}
+			}
+
+			// Create Query object if needed
+			qry := &specv31.Schema{
+				Type:       "object",
+				Properties: map[string]specv31.Ref[*specv31.Schema]{},
+				Extensions: map[string]any{
+					"x-goapi-binding": "query",
+				},
+			}
+			for _, ref := range op.Parameters {
+				param := ref.Value
+				if param.In == "query" {
+					qry.Properties[param.Name] = *param.Schema
+					if param.Required {
+						qry.Required = append(qry.Required, param.Name)
+					}
+				}
+			}
+			if len(qry.Properties) > 0 {
+				key := strcase.ToGoPascal(op.OperationID) + "Query"
+				log.Debug().Msgf("Creating new Query schema from operation %s as %s", op.OperationID, key)
+				doc.Components.Schemas[key] = qry
+				op.Extensions["x-goapi-query-object"] = key
 			}
 		}
 	}

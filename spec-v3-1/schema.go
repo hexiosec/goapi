@@ -20,7 +20,12 @@ type Schema struct {
 	MinLength int    `json:"minLength,omitempty"`
 	Pattern   string `json:"pattern,omitempty"`
 
+	// Numbers
+	Minimum float64 `json:"minimum,omitempty"`
+	Maximum float64 `json:"maximum,omitempty"`
+
 	Type        string   `json:"type,omitempty"`
+	Format      string   `json:"format,omitempty"`
 	Description string   `json:"description,omitempty"`
 	Required    []string `json:"required,omitempty"`
 	Enum        []any    `json:"enum,omitempty"`
