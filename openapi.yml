@@ -1,0 +1,2296 @@
+openapi: 3.1.0
+x-go-package: trebuchet_api
+info:
+  title: Trebuchet API
+  version: 0.1.0
+  description: API description for Trebuchet Secure File Transfer
+externalDocs:
+  description: Find out more about Trebuchet
+  url: https://trebuchet.me
+servers:
+  - url: "/api"
+tags:
+  - name: config
+    description: General client-facing configuration
+  - name: auth
+    description: Authentication/authorisation endpoints
+  - name: events
+    description: System events
+  - name: files
+    description: File transfers
+  - name: invites
+    description: Invitations for file transfers
+  - name: stripe
+    description: Billing integration
+  - name: users
+    description: User information
+  - name: admin
+    description: System administration
+
+paths:
+  /:
+    get:
+      operationId: getConfig
+      summary: Get combined config, auth state, and user information
+      tags:
+        - config
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantConfigResponse"
+        404:
+          description: Tenant for the current origin was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantNotFoundResponse"
+
+  /config/{id}:
+    get:
+      operationId: getTenantConfig
+      summary: Get tenant config by ID
+      tags:
+        - config
+      security:
+        - {}
+        - APIKey: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the tenant
+          required: true
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantURLResponse"
+        404:
+          description: Tenant for the give ID was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantNotFoundResponse"
+
+  /auth:
+    get:
+      operationId: getAuthState
+      summary: Get the auth state and associated user for the request
+      tags:
+        - auth
+      security:
+        - {}
+        - APIKey: []
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+    delete:
+      operationId: signOut
+      summary: Sign out of current session
+      tags: [auth]
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSignOutResponse"
+
+  /auth/oidc:
+    post:
+      operationId: startOIDC
+      summary: Starts OIDC flow
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthStartOIDCRequest"
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthStartOIDCResponse"
+  
+  /auth/oidc/{state}:
+    get:
+      operationId: getOIDCParameters
+      summary: Gets the OIDC parameters for an ongoing OIDC sign in flow
+      tags: [auth]
+      parameters:
+        - name: state
+          in: path
+          description: OIDC state value
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthGetOIDCParametersResponse"
+        404:
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: finishOIDC
+      summary: Finishes OIDC flow
+      tags: [auth]
+      parameters:
+        - name: state
+          in: path
+          description: OIDC state value
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthFinishOIDCRequest"
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthFinishOIDCResponse"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/code:
+    post:
+      operationId: getEmailCode
+      summary: Send a verification code to a chosen email address.
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthEmailCodeRequest"
+      responses:
+        204:
+          description: Valid response
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /auth/verify_email:
+    post:
+      operationId: verifyEmailCode
+      summary: Verify an email address for the current session.
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthEmailVerifyRequest"
+      responses:
+        204:
+          description: Valid response
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /events:
+    post:
+      operationId: reportEvent
+      summary: Create an event entry
+      tags: [events]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Valid response
+        400:
+          $ref: "#/components/responses/BadRequest"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+    get:
+      operationId: getEvents
+      summary: Get tenant audit events
+      tags: [events]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+        - name: user
+          in: query
+          schema:
+            type: string
+        - name: ip
+          in: query
+          schema:
+            type: string
+        - name: file
+          in: query
+          schema:
+            type: string
+        - name: invite
+          in: query
+          schema:
+            type: string
+        - name: device
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventResponse"
+
+  /files:
+    post:
+      operationId: createFile
+      summary: Create an upload
+      tags:
+        - files
+      security:
+        - APIKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileCreateRequest"
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        404:
+          $ref: "#/components/responses/NotFound"
+    get:
+      operationId: getFiles
+      summary: Get files for the current user
+      tags:
+        - files
+      security:
+        - APIKey: []
+      parameters:
+        - name: flags
+          in: query
+          description: Transfer flags
+          schema:
+            type: integer
+          x-go-type-skip-optional-pointer: true
+        - name: state
+          in: query
+          description: File states to include
+          schema:
+            type: array
+            items:
+              type: string
+              # enum: [created, upload_started, write_complete, deleted]
+          x-go-type-skip-optional-pointer: true
+        - name: expired_days
+          in: query
+          description: Return files expired within this many days
+          schema:
+            type: integer
+          x-go-type-skip-optional-pointer: true
+        - name: invite_id
+          in: query
+          description: Return files attached to invite 
+          schema:
+            type: string
+          x-go-name: InviteID
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FileResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+
+  /files/{id}:
+    get:
+      operationId: getFile
+      summary: Get the metadata associated with a specific file
+      tags:
+        - files
+      security: []
+      parameters:
+        - name: id
+          in: path
+          description: Public ID of the file
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicID"
+        - name: expand
+          in: query
+          description: Fields to expand with additional information
+          schema:
+            type: array
+            items:
+              type: string
+              # enum: [user, invite]
+          x-go-type-skip-optional-pointer: true
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        404:
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateFile
+      summary: Update a file
+      tags:
+        - files
+      security:
+        - APIKey: []
+      parameters:
+        - name: id
+          in: path
+          description: Public ID of the file
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileUpdateRequest"
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        404:
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteFile
+      summary: Delete a file by ID
+      tags:
+        - files
+      security:
+        - APIKey: []
+      parameters:
+        - name: id
+          in: path
+          description: Public ID of the file
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicID"
+      responses:
+        204:
+          description: Valid response
+        400:
+          $ref: "#/components/responses/BadRequest"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /files/{id}/upload:
+    post:
+      operationId: startFileUpload
+      summary: Get the download URL for the encrypted metadata
+      tags:
+        - files
+      security:
+        - APIKey: []
+      parameters:
+        - name: id
+          in: path
+          description: Public ID of the file
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileStartUploadRequest"
+      responses:
+        201:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileStartUploadResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /files/{id}/verify:
+    post:
+      operationId: verifyFileUpload
+      summary: Verify the upload was successful
+      tags:
+        - files
+      security:
+        - APIKey: []
+      parameters:
+        - name: id
+          in: path
+          description: Public ID of the file
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileVerifyUploadRequest"
+      responses:
+        204:
+          description: Valid response
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /files/{id}/meta:
+    get:
+      operationId: getMetaUrl
+      summary: Get the download URL for the encrypted metadata
+      tags:
+        - files
+      security: []
+      parameters:
+        - name: id
+          in: path
+          description: Public ID of the file
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicID"
+        - name: Trebuchet-Challenge
+          in: header
+          schema:
+            type: string
+          required: true
+          description: >
+            Challenge is the result of signed hash of the file nonce using HMAC-SHA256 with the file authentication key.
+            The authentication key is derived from the file secret key which is shared out-of-band in the URL fragment.
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileURLResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /files/{id}/content:
+    get:
+      operationId: getContentUrl
+      summary: Get the download URL for the encrypted content
+      tags:
+        - files
+      security: []
+      parameters:
+        - name: id
+          in: path
+          description: Public ID of the file
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicID"
+        - name: Trebuchet-Challenge
+          in: header
+          schema:
+            type: string
+          required: true
+          description: >
+            Challenge is the result of signed hash of the file nonce using HMAC-SHA256 with the file authentication key.
+            The authentication key is derived from the file secret key which is shared out-of-band in the URL fragment.
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileURLResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /files/{id}/events:
+    get:
+      operationId: getFileEvents
+      summary: Get the events for a file
+      tags:
+        - files
+      security:
+        - APIKey: []
+      parameters:
+        - name: id
+          in: path
+          description: Public ID of the file
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicID"
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                type: array
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /invites:
+    post:
+      operationId: createInvite
+      summary: Create an invite
+      tags:
+        - invites
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteCreateRequest"
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        404:
+          $ref: "#/components/responses/NotFound"
+    get:
+      tags:
+        - invites
+      summary: Get invites for the current user
+      security:
+        - APIKey: []
+      operationId: getInvites
+      parameters:
+        - name: state
+          in: query
+          description: Invite states to include - [created, file_added, deleted]
+          schema:
+            type: array
+            items:
+              type: string
+              # enum: [created, file_added, deleted]
+          x-go-type-skip-optional-pointer: true
+        - name: expired_days
+          in: query
+          description: Return invites expired within this many days
+          schema:
+            type: integer
+          x-go-type-skip-optional-pointer: true
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InviteResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+
+  /invites/{id}:
+    get:
+      operationId: getInvite
+      summary: Get the metadata associated with a specific Invite
+      tags:
+        - invites
+      parameters:
+        - name: id
+          in: path
+          description: Public ID of the invite
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicID"
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteInvite
+      summary: Delete an invite by ID
+      tags:
+        - invites
+      security:
+        - APIKey: []
+      parameters:
+        - name: id
+          in: path
+          description: Public ID of the invite
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicID"
+      responses:
+        204:
+          description: Valid response
+        400:
+          $ref: "#/components/responses/BadRequest"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /invites/{id}/upload:
+    post:
+      operationId: startUpload
+      summary: Create a file upload in response to a specific Invite
+      tags:
+        - invites
+      parameters:
+        - name: id
+          in: path
+          description: Public ID of the invite
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteStartUploadRequest"
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteStartUploadResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /invites/{id}/verify:
+    post:
+      operationId: verifyInviteUpload
+      summary: Complete the file upload associated with a specific Invite
+      tags:
+        - invites
+      parameters:
+        - name: id
+          in: path
+          description: Public ID of the invite
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteVerifyUploadRequest"
+      responses:
+        204:
+          description: Valid response
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /invites/{id}/events:
+    get:
+      operationId: getInviteEvents
+      summary: Get the events for an invite
+      tags:
+        - invites
+      security: []
+      parameters:
+        - name: id
+          in: path
+          description: Public ID of the invite
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicID"
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                type: array
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /invites/{id}/user:
+    get:
+      operationId: getInviteUser
+      summary: Get the user info for an invite
+      tags: [invites]
+      security: []
+      parameters:
+        - name: id
+          in: path
+          description: Public ID of the invite
+          required: true
+          schema:
+            $ref: "#/components/schemas/PublicID"
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSummaryResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /stripe/portal:
+    post:
+      operationId: createPortalUrl
+      summary: Creates a Stripe portal URL for the current user
+      tags: [stripe]
+      responses:
+        201:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeCreatePortalResponse"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /stripe/checkout/{product}:
+    post:
+      operationId: createCheckoutUrl
+      summary: Creates a Stripe checkout URL for the current user
+      tags: [stripe]
+      parameters:
+        - name: product
+          in: path
+          description: Product string
+          required: true
+          schema:
+            type: string
+      responses:
+        201:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeCreateCheckoutResponse"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /users/api_key:
+    post:
+      operationId: createAPIKey
+      summary: Create an API key for the user logged in to the current session
+      tags:
+        - users
+      parameters:
+        - name: X-CSRF-Token
+          in: header
+          schema:
+            type: string
+          required: true
+          example: '1'
+          description: |
+            API Keys can only be created when logged in via session authentication, which requires the session CSRF token to be set.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsersCreateAPIKeyRequest"
+      responses:
+        201:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsersCreateAPIKeyResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /users/me:
+    patch:
+      operationId: updateCurrentUser
+      summary: Update current user fields
+      tags: [users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsersUpdateCurrentRequest"
+      responses:
+        204:
+          description: Valid response
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/me/stats:
+    get:
+      operationId: getStats
+      summary: Get usage stats for the current user
+      tags:
+        - users
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserStatsResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /admin/tenants:
+    get:
+      operationId: getTenants
+      summary: Get all tenants
+      tags:
+        - admin
+      parameters:
+        - name: enabled
+          in: query
+          description: Enabled/disabled tenants
+          schema:
+            type: boolean
+        - name: expand
+          in: query
+          description: Fields to expand with additional information
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [enabled_users_count]
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTenantsArrayResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /admin/tenants/{id}:
+    get:
+      operationId: getTenantByID
+      summary: Get tenant
+      tags:
+        - admin
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          description: ID of the tenant
+          required: true
+        - name: expand
+          in: query
+          description: Fields to expand with additional information
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [bandwidth_usage]
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTenantsResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateTenantByID
+      summary: Update tenant
+      tags:
+        - admin
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          description: ID of the tenant
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminTenantsUpdateRequest"
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTenantsResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /admin/users:
+    get:
+      operationId: getUsers
+      summary: Get all users
+      tags:
+        - admin
+      parameters:
+        - name: tenant_id
+          in: query
+          description: Tenant ID
+          schema:
+            type: string
+        - name: group_id
+          in: query
+          description: Group ID
+          schema:
+            type: string
+        - name: disabled
+          in: query
+          description: Group ID
+          schema:
+            type: string
+            enum: ['true']
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUsersArrayResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /admin/users/{id}:
+    get:
+      operationId: getUserByID
+      summary: Get user
+      tags:
+        - admin
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          description: ID of the user
+          required: true
+        - name: expand
+          in: query
+          description: Fields to expand with additional information
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [bandwidth_usage, active_sessions, groups]
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUsersResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateUserByID
+      summary: Update user
+      tags:
+        - admin
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          description: ID of the user
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUsersUpdateRequest"
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUsersResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteUserByID
+      summary: Delete user
+      tags:
+        - admin
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          description: ID of the user
+          required: true
+      responses:
+        204:
+          description: Valid response
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /admin/users/{id}/groups/{group_id}:
+    post:
+      operationId: addUserToGroup
+      summary: Add user to group by ID
+      tags:
+        - admin
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          description: ID of the user
+          required: true
+        - name: group_id
+          in: path
+          schema:
+            type: string
+          description: ID of the group
+          required: true
+      responses:
+        201:
+          description: Valid response
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: removeUserFromGroup
+      summary: Remove user from group by ID
+      tags:
+        - admin
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          description: ID of the user
+          required: true
+        - name: group_id
+          in: path
+          schema:
+            type: string
+          description: ID of the group
+          required: true
+      responses:
+        204:
+          description: Valid response
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /admin/groups:
+    get:
+      operationId: getGroups
+      summary: Get all groups
+      tags:
+        - admin
+      parameters:
+        - name: tenant_id
+          in: query
+          description: Tenant ID
+          schema:
+            type: string
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminGroupsArrayResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /admin/groups/{id}:
+    get:
+      operationId: getGroupByID
+      summary: Get group
+      tags:
+        - admin
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          description: ID of the group
+          required: true
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminGroupsResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateGroupByID
+      summary: Update group
+      tags:
+        - admin
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          description: ID of the group
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminGroupsUpdateRequest"
+      responses:
+        200:
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminGroupsResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+components:
+  responses:
+    BadRequest:
+      description: Request did not match expected format or failed validation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Authorisation failed or was not provided
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Authorisation was successful but the operation was not allowed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Request was valid but did not find a result
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Error:
+      description: An error occurred processing the request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    TenantConfigResponse:
+      type: object
+      required: [registration, terms_and_conditions]
+      properties:
+        i18n:
+          type: object
+          description: Internationalisation customisations
+        footer:
+          type: string
+          description: Footer style
+        theme:
+          type: object
+          description: Theme customisations
+        accountManagement:
+          type: string
+          description: Account management link
+        userAdmin:
+          type: string
+          description: User administration link
+        downloadBandwidthGiB:
+          type: number
+          description: Total allowed monthly download bandwidth for the tenant (GiB)
+        stripe:
+          type: object
+          description: Stripe configuration
+        registration:
+          type: boolean
+          description: Registration enabled
+        terms_and_conditions:
+          type: boolean
+          description: Terms and Conditions acceptance required
+        vanity_url:
+          type: string
+          description: Origin to use in sharing links
+
+    TenantURLResponse:
+      type: object
+      required: ["url"]
+      properties:
+        url:
+          type: string
+          description: URL for the corresponding tenant
+
+    TenantNotFoundResponse:
+      type: object
+      required: ["url"]
+      properties:
+        url:
+          type: string
+          description: URL to redirect to following error
+
+    AuthResponse:
+      type: object
+      required: ["authenticated"]
+      properties:
+        authenticated:
+          type: boolean
+          description: True if the chosen authentication scheme has passed
+          example: true
+        verified_email:
+          type: string
+          description: Verified email address of the logged in user or the current session
+          example: someone@example.com
+        scheme:
+          type: string
+          description: Name of the authentication scheme used
+          example: session
+        roles:
+          type: array
+          items:
+            type: string
+          description: List of roles granted to the current user
+          example: ["files:list", "files:create"]
+        attributes:
+          type: object
+          description: Combined attributes for the current user based on group membership
+        user:
+          $ref: "#/components/schemas/UserResponse"
+
+    AuthSignOutResponse:
+      type: object
+      properties:
+        url:
+          type: string
+          description: Optional end session redirect URL
+          x-go-name: URL
+
+    AuthEmailCodeRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          description: Email address
+          example: someone@example.com
+          x-oapi-codegen-extra-tags:
+            validate: required,email,lowercase
+
+    AuthEmailVerifyRequest:
+      type: object
+      required: [email, code]
+      properties:
+        email:
+          type: string
+          description: Email address
+          example: someone@example.com
+          x-oapi-codegen-extra-tags:
+            validate: required,email,lowercase
+        code:
+          type: string
+          description: Verification code
+          example: 123456
+          x-oapi-codegen-extra-tags:
+            validate: required,numeric,len=6
+
+    AuthStartOIDCRequest:
+      type: object
+      required: ["next_page"]
+      properties:
+        next_page:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
+
+    AuthStartOIDCResponse:
+      type: object
+      required: [auth_url, redirect_url, state, nonce, client_id, challenge, challenge_method]
+      properties:
+        auth_url:
+          type: string
+          x-go-name: AuthURL
+        redirect_url:
+          type: string
+          x-go-name: RedirectURL
+        state:
+          type: string
+        nonce:
+          type: string
+        client_id:
+          type: string
+          x-go-name: ClientID
+        registration_url:
+          type: string
+          x-go-name: RegistrationURL
+        challenge:
+          type: string
+        challenge_method:
+          type: string
+        auth_query:
+          type: string
+
+    AuthGetOIDCParametersResponse:
+      type: object
+      required: [hostname, redirect_url, client_id, token_url, verifier]
+      properties:
+        hostname:
+          type: string
+        redirect_url:
+          type: string
+          x-go-name: RedirectURL
+        client_id:
+          type: string
+          x-go-name: ClientID
+        token_url:
+          type: string
+          x-go-name: TokenURL
+        verifier:
+          type: string
+
+    AuthFinishOIDCRequest:
+      type: object
+      required: [id_token]
+      properties:
+        id_token:
+          type: string
+          x-go-name: IDToken
+          x-oapi-codegen-extra-tags:
+            validate: required
+
+    AuthFinishOIDCResponse:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+
+    EventResponse:
+      type: object
+      required: [id, event, ip, metadata, created]
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        event:
+          type: string
+        ip:
+          type: string
+        user_id:
+          type: string
+        device_id:
+          type: string
+        metadata:
+          type: object
+        created:
+          type: string
+        user:
+          type: object
+        geoip:
+          type: object
+
+    FileCreateRequest:
+      type: object
+      required: [flags, exp, max]
+      properties:
+        flags:
+          type: integer
+          description: Transfer flags
+          x-go-type: models.FileFlags
+          x-go-type-import:
+            path: github.com/redmapletech/trebuchet-api/internal/models
+          x-oapi-codegen-extra-tags:
+            validate: required,gt=0
+        description:
+          type: string
+          description: Upload description
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            validate: omitempty,lte=256
+        exp:
+          type: integer
+          description: Number of seconds until expiry
+          x-go-name: ExpirySeconds
+          x-oapi-codegen-extra-tags:
+            validate: required
+        max:
+          type: integer
+          description: Maximum number of times this file can be downloaded
+          example: 1
+          x-go-name: MaxDownloads
+          x-oapi-codegen-extra-tags:
+            validate: required,gt=0
+        recipients:
+          type: array
+          description: List of recipient email addresses
+          items:
+            type: string
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            validate: omitempty,dive,email,lowercase
+
+    FileUpdateRequest:
+      type: object
+      properties:
+        description:
+          type: string
+          description: Upload description
+          x-oapi-codegen-extra-tags:
+            validate: omitempty,lte=256
+        exp:
+          type: integer
+          description: Number of seconds until expiry
+          x-oapi-codegen-extra-tags:
+            validate: omitempty,gt=0
+        max:
+          type: integer
+          description: Maximum number of times this file can be downloaded
+          example: 1
+          x-oapi-codegen-extra-tags:
+            validate: omitempty,gt=0
+
+    FileResponse:
+      type: object
+      required:
+        - id
+        - public_id
+        - user_id
+        - state
+        - created
+        - size
+        - count
+        - flags
+        - description
+      properties:
+        id:
+          type: string
+          description: File ID
+          example: af3c5856-6d32-48cf-a74a-ff31a11fe341
+          x-go-name: ID
+        public_id:
+          type: string
+          description: File Public ID for use in URL
+          example: wgNNhL4DTOD5UI3IiWMteA
+          x-go-name: PublicID
+        user_id:
+          type: string
+          description: User ID of the file owner
+          example: 722a8fa7-37af-40af-90b9-a964f9b7b764
+          x-go-name: UserID
+        description:
+          type: string
+          description: Transfer description
+          example: File transfer
+        flags:
+          type: integer
+          description: Transfer flags
+        count:
+          type: integer
+          description: Number of times this file has been downloaded
+          example: 0
+        created:
+          type: string
+          description: Timestamp at which the file upload was created
+          example: "2022-12-07T23:51:13.326067Z"
+        exp:
+          type: string
+          description: Timestamp at which the file expires
+          example: "2022-12-08T23:51:13.326067Z"
+        max:
+          type: integer
+          description: Maximum number of times this file can be downloaded
+          example: 1
+        salt:
+          type: string
+          description: Random salt used in the encrypt/decrypt process
+        nonce:
+          type: string
+          description: Authentication challenge
+        public_key:
+          type: string
+          description: Peer public key used in keychain process
+        size:
+          type: integer
+          description: Size of the encrypted content in bytes
+          example: 4096
+        state:
+          type: string
+          description: Lifecycle state of the file upload
+          example: write_complete
+        user:
+          $ref: "#/components/schemas/UserSummaryResponse"
+        invite:
+          $ref: "#/components/schemas/InviteSummaryResponse"
+
+    FileURLResponse:
+      type: object
+      required: ["url"]
+      properties:
+        url:
+          type: string
+          description: Presigned URL to download the file metadata from the storage provider
+
+    FileStartUploadRequest:
+      type: object
+      required: ["size"]
+      properties:
+        size:
+          type: integer
+          description: Total encrypted size
+          x-oapi-codegen-extra-tags:
+            validate: required,gt=0
+
+    FileVerifyUploadRequest:
+      type: object
+      required: ["auth_key"]
+      properties:
+        auth_key:
+          type: string
+          description: Authentication key produced during the keychain process
+          x-oapi-codegen-extra-tags:
+            validate: required,lowercase,hexadecimal,len=64
+        public_key:
+          type: string
+          description: Public key
+          x-oapi-codegen-extra-tags:
+            validate: omitempty,lowercase,hexadecimal,len=194
+        data:
+          type: object
+          description: Additional data required by the storage backend
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            validate: omitempty
+        
+
+    FileStartUploadResponse:
+      type: object
+      required: ["type", "salt", "block", "meta", "content"]
+      properties:
+        type:
+          type: string
+          description: Storage backend type
+        salt:
+          type: string
+          description: Salt value to use in cryptographic operations
+        block:
+          type: integer
+          description: Multipart block size
+        meta:
+          type: string
+        content:
+          type: array
+          items:
+            type: string
+
+    FileSummaryResponse:
+      type: object
+      required: ['id', 'public_id', 'state', 'size']
+      properties:
+        public_id:
+          type: string
+          description: Invite Public ID for use in URL
+          example: irKkU1YNH7Xhee0qaRi9IA
+        size:
+          type: integer
+          description: Size of the encrypted content in bytes
+          example: 4096
+        exp:
+          type: string
+          description: Timestamp at which the file expires
+          example: "2022-12-08T23:51:13.326067Z"
+        max:
+          type: integer
+          description: Maximum number of times this file can be downloaded
+          example: 1
+        count:
+          type: integer
+          description: Number of times this file has been downloaded
+          example: 0
+        state:
+          type: string
+          description: Lifecycle state of the file upload
+          example: write_complete
+        public_key:
+          type: string
+          description: Public key for use in keychain process
+
+    InviteCreateRequest:
+      type: object
+      required: [subject, exp, public_key]
+      properties:
+        subject:
+          type: string
+          description: Invite subject
+          x-oapi-codegen-extra-tags:
+            validate: required,lte=256
+        exp:
+          type: integer
+          description: Number of seconds until expiry
+          x-oapi-codegen-extra-tags:
+            validate: required,gt=0
+        public_key:
+          type: string
+          description: Public key for use in keychain process
+          x-oapi-codegen-extra-tags:
+            validate: required,lowercase,hexadecimal,len=194
+
+    InviteResponse:
+      type: object
+      required: ['id', 'user_id', 'public_id', 'created', 'state']
+      properties:
+        id:
+          type: string
+          description: Invite ID
+          example: af3c5856-6d32-48cf-a74a-ff31a11fe341
+          x-go-name: ID
+        public_id:
+          type: string
+          description: Invite Public ID for use in URL
+          example: wgNNhL4DTOD5UI3IiWMteA
+          x-go-name: PublicID
+        user_id:
+          type: string
+          description: User ID of the invite owner
+          example: 722a8fa7-37af-40af-90b9-a964f9b7b764
+          x-go-name: UserID
+        subject:
+          type: string
+          description: Invitation subject or description of request
+          example: Document Transfer
+        created:
+          type: string
+          description: Timestamp at which the invite was created
+          example: "2022-12-07T23:51:13.326067Z"
+        exp:
+          type: string
+          description: Timestamp at which the invite and associated file upload will expire
+          example: "2022-12-08T23:51:13.326067Z"
+        max:
+          type: integer
+          description: Maximum number of times the invite can be used
+          example: 1
+        public_key:
+          type: string
+          description: Public key for use in keychain process
+        state:
+          type: string
+          description: Lifecycle state of the invite
+          example: file_added
+
+    InviteStartUploadRequest:
+      type: object
+      required: ["size"]
+      properties:
+        size:
+          type: integer
+          description: Size of the encrypted content in bytes
+          example: 4096
+          x-oapi-codegen-extra-tags:
+            validate: required,gt=0
+
+    InviteStartUploadResponse:
+      type: object
+      required: ["file_id", "type", "salt", "block", "meta", "content"]
+      properties:
+        file_id:
+          type: string
+          description: File ID
+          example: af3c5856-6d32-48cf-a74a-ff31a11fe341
+          x-go-name: FileID
+        type:
+          type: string
+          description: Storage backend type
+        salt:
+          type: string
+          description: Salt value to use in cryptographic operations
+        block:
+          type: integer
+          description: Multipart block size
+        meta:
+          type: string
+        content:
+          type: array
+          items:
+            type: string
+
+    InviteVerifyUploadRequest:
+      type: object
+      required: ["file_id", "auth_key", "public_key", "data"]
+      properties:
+        file_id:
+          type: string
+          description: File ID
+          example: af3c5856-6d32-48cf-a74a-ff31a11fe341
+          x-go-name: FileID
+          x-oapi-codegen-extra-tags:
+            validate: required,uuid
+        auth_key:
+          type: string
+          description: Authentication key produced during the keychain process
+          x-oapi-codegen-extra-tags:
+            validate: required,lowercase,hexadecimal,len=64
+        public_key:
+          type: string
+          description: Authentication key produced during the keychain process
+          x-oapi-codegen-extra-tags:
+            validate: required,lowercase,hexadecimal,len=194
+        data:
+          type: object
+          description: Additional data required by the storage backend
+
+    InviteSummaryResponse:
+      type: object
+      required: [public_id]
+      properties:
+        public_id:
+          type: string
+          description: Invite Public ID for use in URL
+          example: irKkU1YNH7Xhee0qaRi9IA
+          x-go-name: PublicID
+
+    StripeCreatePortalResponse:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          description: Portal redirect URL
+
+    StripeCreateCheckoutResponse:
+      type: object
+      required: [pk, session_id]
+      properties:
+        pk:
+          type: string
+          description: Stripe public key
+        session_id:
+          type: string
+          description: Checkout session ID
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: User ID
+          example: af3c5856-6d32-48cf-a74a-ff31a11fe341
+          x-go-name: ID
+        public_id:
+          type: string
+          description: User Public ID
+          example: irKkU1YNH7Xhee0qaRi9IA
+          x-go-name: PublicID
+        email:
+          type: string
+          description: Email address
+          example: user@example.com
+        name:
+          type: string
+          description: Full name
+          example: Example User
+        given_name:
+          type: string
+          description: Given name
+          example: Example
+        family_name:
+          type: string
+          description: Family name
+          example: User
+        kek:
+          type: string
+          description: Key encryption key to secure local keystore
+          x-go-name: KEK
+
+    UserSummaryResponse:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          description: Full name
+          example: Example User
+        email:
+          type: string
+          description: Email address
+          example: user@example.com
+
+    UserStatsResponse:
+      type: object
+      required: 
+        - tenant_active_transfers
+        - tenant_total_size
+        - user_active_transfers
+        - user_fulfilled_sends
+        - user_fulfilled_invites
+        - user_transfers_month
+        - user_total_size
+      properties:
+        tenant_active_transfers:
+          type: number 
+        tenant_total_size:
+          type: number 
+        user_active_transfers:
+          type: number 
+        user_fulfilled_sends:
+          type: number 
+        user_fulfilled_invites:
+          type: number 
+        user_transfers_month:
+          type: number 
+        user_total_size:
+          type: number 
+        user_download_size_month:
+          type: number
+        tenant_download_size_month:
+          type: number
+
+    UsersCreateAPIKeyRequest:
+      type: object
+      required: [description]
+      properties:
+        description:
+          type: string
+          description: API Key description
+          example: Test API key
+        lifetime:
+          type: string
+          description: Validity duration
+          example: 24h
+          x-go-type: Duration
+
+    UsersCreateAPIKeyResponse:
+      type: object
+      required: [api_key, description]
+      properties:
+        api_key:
+          type: string
+          description: API Key
+        description:
+          type: string
+          description: API Key description
+          example: Test API key
+        lifetime:
+          type: string
+          description: Validity duration
+          example: 24h
+
+    UsersUpdateCurrentRequest:
+      type: object
+      properties:
+        terms_and_conditions:
+          type: string
+          format: date-time
+          description: Timestamp of terms and conditions acceptance
+
+    AdminTenantsArrayResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/AdminTenantsResponse"
+    
+    AdminTenantsResponse:
+      type: object
+      required: [id, name, display_name, hostname, client_settings, enabled]
+      properties:
+        id:
+          type: string
+          description: Tenant ID
+        name:
+          type: string
+          description: Tenant ID
+        display_name:
+          type: string
+          description: Tenant ID
+        hostname:
+          type: string
+          description: Tenant ID
+        default_group_id:
+          type: string
+          description: Group ID
+        client_settings:
+          type: object
+        server_settings:
+          type: object
+        enabled:
+          type: boolean
+        bandwidth_usage:
+          type: array
+          items:
+            type: object
+        enabled_users_count:
+          type: number
+
+    AdminUsersArrayResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/AdminUsersResponse"
+
+    AdminUsersResponse:
+      type: object
+      required: 
+        - id
+        - tenant_id
+        - email
+        - name
+        - family_name
+        - given_name
+        - attributes
+        - enabled
+      properties:
+        id:
+          type: string
+          description: User ID
+        tenant_id:
+          type: string
+          description: Tenant ID
+        email:
+          type: string
+          description: Email address
+        name:
+          type: string
+          description: User display name
+        family_name:
+          type: string
+          description: User family name
+        given_name:
+          type: string
+          description: User given name
+        attributes:
+          type: object
+        enabled:
+          type: boolean
+        bandwidth_usage:
+          type: array
+          items:
+            type: object
+        active_sessions:
+          type: array
+          items:
+            type: object
+        groups:
+          type: array
+          items:
+            type: object
+
+    AdminUsersUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: User Name
+        family_name:
+          type: string
+          description: User family name
+        given_name:
+          type: string
+          description: User given name
+        email:
+          type: string
+          description: User email address
+        attributes:
+          type: object
+        enabled:
+          type: boolean
+
+    AdminTenantsUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Tenant Name
+        display_name:
+          type: string
+          description: Tenant Display Name
+        hostname:
+          type: string
+          description: Tenant hostname
+        client_settings:
+          type: object
+        server_settings:
+          type: object
+        enabled:
+          type: boolean
+        default_group_id:
+          type: string
+        set_default_group_id:
+          type: boolean
+
+    AdminGroupsArrayResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/AdminGroupsResponse"
+    
+    AdminGroupsResponse:
+      type: object
+      required: [id, tenant_id, name, created, attributes, priority]
+      properties:
+        id:
+          type: string
+          description: User ID
+        tenant_id:
+          type: string
+          description: Tenant ID
+        name:
+          type: string
+          description: Group name
+        created:
+          type: string
+          description: Timestamp at which the group was created
+          example: "2022-12-07T23:51:13.326067Z"
+        attributes:
+          type: object
+          items:
+            type: object
+        priority:
+          type: integer
+
+    AdminGroupsUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Group Name
+        attributes:
+          type: object
+          description: Group attributes
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Short code for the specific error type that occurred
+          example: error_short_code
+      required:
+        - code
+
+    PublicID:
+      type: string
+      pattern: "^[A-Za-z0-9-_]+$"
+      maxLength: 22
+
+  securitySchemes:
+    APIKey:
+      type: apiKey
+      in: header
+      name: "X-Trebuchet-API-Key"
