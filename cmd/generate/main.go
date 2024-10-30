@@ -23,6 +23,7 @@ func main() {
 	pflag.StringP("input", "i", "openapi.yml", "Input schema")
 	pflag.StringP("output", "o", "output", "Output folder")
 	pflag.StringP("template", "t", "", "Generator template")
+	pflag.String("templates-path", "./templates", "Path to template library")
 	pflag.Parse()
 
 	v.BindPFlags(pflag.CommandLine)
@@ -35,7 +36,7 @@ func main() {
 		panic(err)
 	}
 
-	if err := g.RenderTemplate(v.GetString("template"), v.GetString("output")); err != nil {
+	if err := g.RenderTemplate(v.GetString("templates-path"), v.GetString("template"), v.GetString("output")); err != nil {
 		panic(err)
 	}
 }

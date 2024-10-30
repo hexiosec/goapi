@@ -4,24 +4,21 @@
 {{- $var := include "param-arg-name" . }}
 {{ $var }} := c.Param({{ .Value.Name | quote}})
 {{- with .Value.Schema.Value }}
+{{- $rules := list "required" }}
 {{- with .MinLength }}
-
-if len({{ $var }}) < {{ . }} {
-  return &ValidationError{"min_length", "parameter", {{ $field | quote }}, nil}
-}
+{{- $rule := list "min=" . | join "" }}
+{{- $rules = append $rules $rule }}
 {{- end }}
 {{- with .MaxLength }}
-
-if len({{ $var }}) > {{ . }} {
-  return &ValidationError{"max_length", "parameter", {{ $field | quote }}, nil}
-}
+{{- $rule := list "max=" . | join "" }}
+{{- $rules = append $rules $rule }}
 {{- end }}
 {{- with .Pattern }}
-
-if res, _ := regexp.MatchString(`{{ . }}`, {{ $var }}); !res  {
-  return &ValidationError{"pattern", "parameter", {{ $field | quote }}, nil}
-}
+{{- warnf "Pattern validation not supported for path parameter %s" (list $field) }}
 {{- end }}
+if err := r.validate.Var({{ $var }}, {{ $rules | join "," | quote }}); err != nil {
+  return err
+}
 {{- end }}
 
 c.Set("param.{{ .Value.Name }}", {{ $var }})
@@ -35,13 +32,25 @@ c.Set("param.{{ .Value.Name }}", {{ $var }})
 body := &{{ . }}{}
 if err := (&echo.DefaultBinder{}).BindBody(c, &body); err != nil {
   return err
-}
-
-validate := validator.New()
-if err := validate.Struct(body); err != nil {
+} else if err := r.validate.Struct(body); err != nil {
   return err
 }
 
 c.Set("body", body)
+{{- end }}
+{{- end }}
+
+
+{{ define "operation-validate-request-query" }}
+{{- with get .Extensions "x-goapi-query-object" }}
+// Query: {{ . }}
+query := &{{ . }}{}
+if err := (&echo.DefaultBinder{}).BindQueryParams(c, &query); err != nil {
+  return err
+} else if err := r.validate.Struct(query); err != nil {
+  return err
+}
+
+c.Set("query", query)
 {{- end }}
 {{- end }}

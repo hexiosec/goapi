@@ -39,6 +39,7 @@ func Validate(doc *specv31.Document) error {
 						Name:        "default",
 						Description: "Default tag for untagged routes",
 					})
+					defaultTagAdded = true
 				}
 			}
 
@@ -50,11 +51,30 @@ func Validate(doc *specv31.Document) error {
 							if mto.Schema != nil {
 								if mto.Schema.Value != nil {
 									key := strcase.ToGoPascal(op.OperationID) + "JSONRequest"
-									log.Debug().Msgf("Moving MediaTypeObject schema from operation %s to %s", op.OperationID, key)
+									log.Debug().Msgf("Moving MediaTypeObject schema from operation %s requestBody to %s", op.OperationID, key)
 									doc.Components.Schemas[key] = mto.Schema.Value
 									mto.Schema.Ref = "#/components/schemas/" + key
 									mto.Schema.Value = nil
 									op.Extensions["x-goapi-json-requestbody-object"] = key
+								}
+							}
+						}
+					}
+				}
+			}
+
+			// If a JSON response is present and not a ref, move to schemas
+			for status, ref := range op.Responses {
+				if ref.Value != nil {
+					for mime, mto := range ref.Value.Content {
+						if mime == "application/json" {
+							if mto.Schema != nil {
+								if mto.Schema.Value != nil {
+									key := strcase.ToGoPascal(op.OperationID) + "JSON" + status + "Response"
+									log.Debug().Msgf("Moving MediaTypeObject schema from operation %s %s response to %s", op.OperationID, status, key)
+									doc.Components.Schemas[key] = mto.Schema.Value
+									mto.Schema.Ref = "#/components/schemas/" + key
+									mto.Schema.Value = nil
 								}
 							}
 						}
@@ -77,7 +97,7 @@ func Validate(doc *specv31.Document) error {
 				Type:       "object",
 				Properties: map[string]specv31.Ref[*specv31.Schema]{},
 				Extensions: map[string]any{
-					"x-goapi-binding": "query",
+					"x-goapi-query-schema": true,
 				},
 			}
 			for _, ref := range op.Parameters {
