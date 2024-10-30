@@ -1,13 +1,13 @@
 package main
 
-//go:generate go run ../../cmd/generate -i ./openapi.yml -o ./server -t server/go-echo --templates-path ../../templates
+//go:generate go run ../../cmd/generate -i ../petstore.yml -o ./server -t server/go-echo --templates-path ../../templates
 //go:generate go run golang.org/x/tools/cmd/goimports@latest -w ./server
 
 import (
 	"log"
 	"net/http"
 
-	"github.com/hexiosec/goapi/examples/petstore/server"
+	"example.com/petstore/server"
 	"github.com/labstack/echo/v4"
 )
 

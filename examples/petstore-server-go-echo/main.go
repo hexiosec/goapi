@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/hexiosec/goapi/examples/petstore/server"
+	"example.com/petstore/server"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
