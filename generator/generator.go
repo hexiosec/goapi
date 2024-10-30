@@ -2,6 +2,7 @@ package generator
 
 import (
 	"bytes"
+	"embed"
 	"errors"
 	"os"
 	"path"
@@ -13,8 +14,9 @@ import (
 )
 
 type Generator struct {
-	extTemplates *string
-	doc          *specv31.Document
+	defaultTemplates embed.FS
+	extTemplates     *string
+	doc              *specv31.Document
 }
 
 type TemplateContext struct {
@@ -23,8 +25,11 @@ type TemplateContext struct {
 	Config *TemplateManifest
 }
 
-func NewGenerator(extTemplates *string) *Generator {
-	return &Generator{extTemplates: extTemplates}
+func NewGenerator(defaultTemplates embed.FS, extTemplates *string) *Generator {
+	return &Generator{
+		defaultTemplates: defaultTemplates,
+		extTemplates:     extTemplates,
+	}
 }
 
 func (g *Generator) LoadSchema(path string) error {
@@ -62,14 +67,14 @@ func (g *Generator) RenderTemplate(name string, outPath string) error {
 		os.RemoveAll(outPath)
 	}
 
-	manifest, err := GetManifest(name, g.extTemplates)
+	manifest, err := g.GetManifest(name)
 	if err != nil {
 		return err
 	}
 
 	log.Info().Msgf("Template: %s", manifest.Name)
 
-	template, err := GetTemplate(name, g.extTemplates)
+	template, err := g.GetTemplate(name)
 	if err != nil {
 		return err
 	}
