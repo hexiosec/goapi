@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
-	"path/filepath"
+	"path"
 	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/ettle/strcase"
+	"github.com/hexiosec/goapi"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )
@@ -27,12 +28,21 @@ type RenderTarget struct {
 	Template string `json:"template,omitempty"`
 }
 
-func GetManifest(path string) (*TemplateManifest, error) {
-	log.Debug().Msgf("Loading template manifest %s", path)
-	buf, err := os.ReadFile(path)
+func GetManifest(name string, basePath *string) (*TemplateManifest, error) {
+	log.Debug().Msgf("Loading template manifest %s", name)
+	var buf []byte
+	var err error
+
+	if basePath == nil {
+		buf, err = goapi.TemplateFS.ReadFile(path.Join("templates", name, "manifest.yml"))
+	} else {
+		buf, err = os.ReadFile(path.Join(*basePath, name, "manifest.yml"))
+	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	m := &TemplateManifest{}
 	err = yaml.Unmarshal(buf, m)
 	if err != nil {
@@ -42,13 +52,15 @@ func GetManifest(path string) (*TemplateManifest, error) {
 	return m, nil
 }
 
-func GetTemplate(path string) (*template.Template, error) {
-	log.Debug().Msgf("Loading template files %s", path)
-	t := template.New(filepath.Base(path))
+func GetTemplate(name string, basePath *string) (*template.Template, error) {
+	log.Debug().Msgf("Loading template files %s", name)
+	t := template.New("root")
 
-	// copied from: https://github.com/helm/helm/blob/8648ccf5d35d682dcd5f7a9c2082f0aaf071e817/pkg/engine/engine.go#L147-L154
-	fm := map[string]interface{}{
+	t.Funcs(sprig.TxtFuncMap())
+
+	t.Funcs(map[string]interface{}{
 		"include": func(name string, data interface{}) (string, error) {
+			// copied from: https://github.com/helm/helm/blob/8648ccf5d35d682dcd5f7a9c2082f0aaf071e817/pkg/engine/engine.go#L147-L154
 			// https://stackoverflow.com/a/71091339
 			buf := bytes.NewBuffer(nil)
 			if err := t.ExecuteTemplate(buf, name, data); err != nil {
@@ -92,12 +104,13 @@ func GetTemplate(path string) (*template.Template, error) {
 			log.Warn().Msgf("Template warning: %s", data)
 			return "", nil
 		},
+	})
+
+	if basePath == nil {
+		_, err := t.ParseFS(goapi.TemplateFS, "templates/"+name+"/*.tmpl")
+		return t, err
 	}
 
-	t, err := t.Funcs(sprig.TxtFuncMap()).Funcs(fm).ParseGlob(path)
-	if err != nil {
-		return nil, err
-	}
-
-	return t, nil
+	_, err := t.ParseGlob(*basePath + "/" + name + "/*.tmpl")
+	return t, err
 }
