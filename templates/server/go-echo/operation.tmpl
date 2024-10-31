@@ -30,9 +30,9 @@ c.Set("param.{{ .Value.Name }}", {{ $var }})
 {{- with get .Extensions "x-request-body-type" }}
 // Body: {{ . }}, Required: {{ $reqd }}
 body := &{{ . }}{}
-if err := (&echo.DefaultBinder{}).BindBody(c, &body); err != nil {
+if err := (&echo.DefaultBinder{}).BindBody(c, body); err != nil {
   return err
-} else if err := r.validate.Struct(body); err != nil {
+} else if err := r.validate.Struct(*body); err != nil {
   return err
 }
 
@@ -45,9 +45,9 @@ c.Set("body", body)
 {{- with get .Extensions "x-goapi-query-object" }}
 // Query: {{ . }}
 query := &{{ . }}{}
-if err := (&echo.DefaultBinder{}).BindQueryParams(c, &query); err != nil {
+if err := (&echo.DefaultBinder{}).BindQueryParams(c, query); err != nil {
   return err
-} else if err := r.validate.Struct(query); err != nil {
+} else if err := r.validate.Struct(*query); err != nil {
   return err
 }
 
