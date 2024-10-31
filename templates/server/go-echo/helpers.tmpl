@@ -1,3 +1,9 @@
+{{ define "package" }}
+{{- with index .Doc.Extensions "x-go-package" }}package {{ . }}
+{{- else }}package server
+{{- end }}
+{{- end }}
+
 {{ define "echo-path" }}
 {{- . | replace "{" ":" | replace "}" "" }}
 {{- end }}
