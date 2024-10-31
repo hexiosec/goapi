@@ -21,7 +21,7 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{- if eq .Type "string" }}{{ include "string-type" (dict "schema" $schema "required" $reqd) }}
 {{- else if eq .Type "integer" }}{{ include "integer-type" (dict "schema" $schema "required" $reqd) }}
 {{- else if eq .Type "number" }}{{ include "number-type" (dict "schema" $schema "required" $reqd) }}
-{{- else if eq .Type "boolean" }}{{ include "boolean-type" (dict "schema" $schema) }}
+{{- else if eq .Type "boolean" }}{{ include "boolean-type" (dict "schema" $schema "required" $reqd) }}
 {{- else if eq .Type "object" }}{{ include "object-type" (dict "schema" $schema "required" $reqd) }}
 {{- else if eq .Type "array" }}{{ include "array-type" (dict "schema" $schema) }}
 {{- else }}any
@@ -86,7 +86,9 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{- end }}
 
 {{ define "boolean-type" }}
-{{- $schema := get . "schema" }}bool
+{{- $schema := get . "schema" }}
+{{- $reqd := get . "required" }}
+{{- if not $reqd }}*{{ end }}bool
 {{- end }}
 
 {{ define "ref-type" }}
