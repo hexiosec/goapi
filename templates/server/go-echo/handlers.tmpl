@@ -59,17 +59,10 @@
 import (
   "http"
   "regexp"
+  "strings"
 
   "github.com/labstack/echo/v4"
   "github.com/go-playground/validator/v10"
-)
-
-type {{ $tag }}Path string
-
-const (
-  {{- range $ops }}
-  {{ include "operation-path-name" . }} {{ $tag }}Path = {{ get .Extensions "x-echo-path" | quote }}
-  {{- end }}
 )
 
 // Interface for {{ $tag }} route endpoints
@@ -97,6 +90,7 @@ func New{{ $tag }}RouteHandlers(wrapper {{ $tag }}Endpoints) *{{ $tag }}RouteHan
 {{- $handler := include "operation-handler-name" . }}
 {{- $middleware := include "operation-middleware-name" . }}
 {{- $wrapper := include "operation-wrapper-name" . }}
+{{- $getPath := include "operation-path-name" . }}
 {{- $method := get .Extensions "x-echo-method" }}
 {{- $path := get .Extensions "x-echo-path" }}
 
@@ -166,9 +160,17 @@ func (r *{{ $tag }}RouteHandlers) {{ $handler }}(c echo.Context) error {
   {{- end }}
 }
 
+// Get path for {{ $method }}:{{ $path }}
+func (r *{{ $tag }}RouteHandlers) {{ $getPath }}(trimPrefix ...string) string {
+  if len(trimPrefix) > 0 {
+    return strings.TrimPrefix({{ $path | quote }}, trimPrefix[0])
+  }
+  return {{ $path | quote }}
+}
+
 // Register the handler and middleware for {{ $method }}:{{ $path }} at the default path
 func (r *{{ $tag }}RouteHandlers) Register{{ $wrapper }}Route(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
-  return r.Register{{ $wrapper }}RouteAt(string({{ include "operation-path-name" . }}), e, m...)
+  return r.Register{{ $wrapper }}RouteAt(r.{{ $getPath }}(), e, m...)
 }
 
 // Register the handler and middleware for {{ $method }}:{{ $path }} at a custom path

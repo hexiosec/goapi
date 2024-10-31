@@ -2,16 +2,10 @@
 package server
 
 import (
+	"strings"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-)
-
-type PetsPath string
-
-const (
-	ListPetsPath    PetsPath = "/pets"
-	CreatePetsPath  PetsPath = "/pets"
-	ShowPetByIDPath PetsPath = "/pets/:petId"
 )
 
 // Interface for Pets route endpoints
@@ -65,9 +59,17 @@ func (r *PetsRouteHandlers) ListPetsHandler(c echo.Context) error {
 	}
 }
 
+// Get path for GET:/pets
+func (r *PetsRouteHandlers) ListPetsPath(trimPrefix ...string) string {
+	if len(trimPrefix) > 0 {
+		return strings.TrimPrefix("/pets", trimPrefix[0])
+	}
+	return "/pets"
+}
+
 // Register the handler and middleware for GET:/pets at the default path
 func (r *PetsRouteHandlers) RegisterListPetsRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
-	return r.RegisterListPetsRouteAt(string(ListPetsPath), e, m...)
+	return r.RegisterListPetsRouteAt(r.ListPetsPath(), e, m...)
 }
 
 // Register the handler and middleware for GET:/pets at a custom path
@@ -107,9 +109,17 @@ func (r *PetsRouteHandlers) CreatePetsHandler(c echo.Context) error {
 	}
 }
 
+// Get path for POST:/pets
+func (r *PetsRouteHandlers) CreatePetsPath(trimPrefix ...string) string {
+	if len(trimPrefix) > 0 {
+		return strings.TrimPrefix("/pets", trimPrefix[0])
+	}
+	return "/pets"
+}
+
 // Register the handler and middleware for POST:/pets at the default path
 func (r *PetsRouteHandlers) RegisterCreatePetsRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
-	return r.RegisterCreatePetsRouteAt(string(CreatePetsPath), e, m...)
+	return r.RegisterCreatePetsRouteAt(r.CreatePetsPath(), e, m...)
 }
 
 // Register the handler and middleware for POST:/pets at a custom path
@@ -148,9 +158,17 @@ func (r *PetsRouteHandlers) ShowPetByIDHandler(c echo.Context) error {
 	}
 }
 
+// Get path for GET:/pets/:petId
+func (r *PetsRouteHandlers) ShowPetByIDPath(trimPrefix ...string) string {
+	if len(trimPrefix) > 0 {
+		return strings.TrimPrefix("/pets/:petId", trimPrefix[0])
+	}
+	return "/pets/:petId"
+}
+
 // Register the handler and middleware for GET:/pets/:petId at the default path
 func (r *PetsRouteHandlers) RegisterShowPetByIDRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
-	return r.RegisterShowPetByIDRouteAt(string(ShowPetByIDPath), e, m...)
+	return r.RegisterShowPetByIDRouteAt(r.ShowPetByIDPath(), e, m...)
 }
 
 // Register the handler and middleware for GET:/pets/:petId at a custom path
