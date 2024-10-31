@@ -23,7 +23,7 @@ func main() {
 	rh.RegisterShowPetByIDRoute(e, CheckShowPetIDMiddleware)
 
 	// Register copy of the create route at a custom endpoint
-	rh.RegisterCreatePetsRouteAt(e, "/new", DebugCreatePetsMiddleware)
+	rh.RegisterCreatePetsRouteAt("/new", e, DebugCreatePetsMiddleware)
 
 	// Run the server
 	e.Start(":3000")

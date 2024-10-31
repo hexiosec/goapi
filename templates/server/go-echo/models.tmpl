@@ -3,6 +3,8 @@
 {{ include "package" . }}
 
 {{- range $key, $schema := .Doc.Components.Schemas }}
+
+// {{ $key }}{{ with $schema.Description }}: {{ . }}{{ end }}
 type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true) }}
 {{- end }}
 {{- end }}
@@ -44,10 +46,17 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
   {{- $tags = append $tags (include "json-tag" (dict "key" $key "required" $childReqd)) }}
   {{- end }}
   {{- $tags = append $tags (include "validate-tag" (dict "ref" $item "required" $childReqd)) }}
+  {{- with $item.Value }}
+  {{- with .Description }}
+
+  // {{ . }}
+  {{- end }}
+  {{- end }}
   {{ include "go-safe-field-name" $key }} {{ include "ref-type" (dict "ref" $item "required" $childReqd "tag" $key) }} `{{ $tags | join " " }}`
   {{- end }}
 }
-{{- else }}map[string]interface{}
+{{- else }}
+{{- if not $reqd }}*{{ end }}map[string]interface{}
 {{- end }}
 {{- end }}
 
