@@ -10,8 +10,8 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/ettle/strcase"
+	"github.com/invopop/yaml"
 	"github.com/rs/zerolog/log"
-	"gopkg.in/yaml.v3"
 )
 
 type TemplateManifest struct {
@@ -70,6 +70,13 @@ func (g *Generator) GetTemplate(name string) (*template.Template, error) {
 		},
 		"json": func(data interface{}) (string, error) {
 			buf, err := json.Marshal(data)
+			if err != nil {
+				return "", err
+			}
+			return string(buf), err
+		},
+		"yaml": func(data interface{}) (string, error) {
+			buf, err := yaml.Marshal(data)
 			if err != nil {
 				return "", err
 			}

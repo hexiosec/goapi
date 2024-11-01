@@ -60,7 +60,7 @@ func (g *Generator) LoadSchema(path string) error {
 func (g *Generator) RenderTemplate(name string, outPath string, clean bool) error {
 	if info, err := os.Stat(outPath); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			err = os.Mkdir(outPath, os.ModePerm)
+			err = os.MkdirAll(outPath, os.ModePerm)
 			if err != nil {
 				return err
 			}
@@ -69,7 +69,7 @@ func (g *Generator) RenderTemplate(name string, outPath string, clean bool) erro
 		}
 	} else if info.IsDir() && clean {
 		os.RemoveAll(outPath)
-		err = os.Mkdir(outPath, os.ModePerm)
+		err = os.MkdirAll(outPath, os.ModePerm)
 		if err != nil {
 			return err
 		}

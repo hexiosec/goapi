@@ -7,7 +7,7 @@ type Server struct {
 	Description string                           `json:"description,omitempty"`
 	Variables   map[string]*ServerVariableObject `json:"variables,omitempty"`
 
-	Extensions map[string]any `json:"-,omitempty"`
+	Extensions map[string]any `json:"-"`
 }
 
 func (d *Server) UnmarshalJSON(value []byte) error {
@@ -31,7 +31,7 @@ type ServerVariableObject struct {
 	Default     string   `json:"default"`
 	Description string   `json:"description,omitempty"`
 
-	Extensions map[string]any `json:"-,omitempty"`
+	Extensions map[string]any `json:"-"`
 }
 
 func (d *ServerVariableObject) UnmarshalJSON(value []byte) error {

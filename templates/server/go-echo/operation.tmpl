@@ -28,7 +28,7 @@ c.Set("param.{{ .Value.Name }}", {{ $var }})
 {{ define "operation-validate-request-body" }}
 {{- $reqd := get .Extensions "x-request-body-required" }}
 {{- with get .Extensions "x-request-body-type" }}
-// Body: {{ . }}, Required: {{ $reqd }}
+// Body: {{ . }}
 body := &{{ . }}{}
 if err := (&echo.DefaultBinder{}).BindBody(c, body); err != nil {
   return err

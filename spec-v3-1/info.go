@@ -13,7 +13,7 @@ type Info struct {
 	License        TODO     `json:"license,omitempty"`
 	Version        string   `json:"version"`
 
-	Extensions map[string]any `json:"-,omitempty"`
+	Extensions map[string]any `json:"-"`
 }
 
 func (d *Info) UnmarshalJSON(value []byte) error {
@@ -37,7 +37,7 @@ type Contact struct {
 	URL   string `json:"url,omitempty"`
 	Email string `json:"email,omitempty"`
 
-	Extensions map[string]any `json:"-,omitempty"`
+	Extensions map[string]any `json:"-"`
 }
 
 func (d *Contact) UnmarshalJSON(value []byte) error {
@@ -61,7 +61,7 @@ type License struct {
 	Identifier string `json:"identifier,omitempty"`
 	URL        string `json:"url,omitempty"`
 
-	Extensions map[string]any `json:"-,omitempty"`
+	Extensions map[string]any `json:"-"`
 }
 
 func (d *License) UnmarshalJSON(value []byte) error {
