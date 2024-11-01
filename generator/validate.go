@@ -101,9 +101,16 @@ func Validate(doc *specv31.Document) error {
 				},
 			}
 			for _, ref := range op.Parameters {
-				param := ref.Value
+				param := ref.Value // this was derefed in the previous block
 				if param.In == "query" {
+					// Move param schema to new query schema
 					qry.Properties[param.Name] = *param.Schema
+
+					// Add the param description to the schema if not set
+					if param.Schema != nil && param.Schema.Value != nil && param.Schema.Value.Description == "" {
+						param.Schema.Value.Description = param.Description
+					}
+
 					if param.Required {
 						qry.Required = append(qry.Required, param.Name)
 					}

@@ -215,11 +215,13 @@ func (r *UserRouteHandlers) RegisterCreateUsersWithListInputRouteAt(path string,
 //   in: query
 //   name: username
 //   schema:
+//     description: The user name for login
 //     type: string
 // - description: The password for login in clear text
 //   in: query
 //   name: password
 //   schema:
+//     description: The password for login in clear text
 //     type: string
 //
 // ## Responses

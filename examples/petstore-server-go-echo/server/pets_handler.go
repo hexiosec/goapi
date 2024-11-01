@@ -39,6 +39,7 @@ func NewPetsRouteHandlers(wrapper PetsEndpoints) *PetsRouteHandlers {
 //   in: query
 //   name: limit
 //   schema:
+//     description: How many items to return at one time (max 100)
 //     format: int32
 //     maximum: 100
 //     type: integer

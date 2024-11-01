@@ -9,6 +9,8 @@ type Error struct {
 
 // ListPetsQuery
 type ListPetsQuery struct {
+
+	// How many items to return at one time (max 100)
 	Limit *int `query:"limit" validate:"omitempty,lte=100"`
 }
 
