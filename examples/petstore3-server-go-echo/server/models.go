@@ -51,7 +51,7 @@ type FindPetsByTagsJSON200Response []Pet
 type FindPetsByTagsQuery struct {
 
 	// Tags to filter by
-	Tags *[]string `query:"tags" validate:"omitempty,dive,required"`
+	Tags []string `query:"tags" validate:"omitempty,dive,required"`
 }
 
 // GetInventoryJSON200Response

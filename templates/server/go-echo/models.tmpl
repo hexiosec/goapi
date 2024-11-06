@@ -17,9 +17,13 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{- $schema := get . "schema" }}
 {{- $reqd := get . "required" }}
 {{- $tag := get . "tag" }}
+{{- $ptr := not $reqd }}
 {{- with $schema }}
+  {{- with get .Extensions "x-go-skip-optional-pointer" }}
+    {{- $ptr = false }}
+  {{- end }}
   {{- with get .Extensions "x-go-type" }}
-    {{- if not $reqd }}*{{ end }}{{ . }}
+    {{- if $ptr }}*{{ end }}{{ . }}
   {{- else }}
     {{- if eq .Type "string" }}{{ include "string-type" (dict "schema" $schema "required" $reqd) }}
     {{- else if eq .Type "integer" }}{{ include "integer-type" (dict "schema" $schema "required" $reqd) }}
@@ -73,7 +77,11 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{ define "array-type" }}
 {{- $schema := get . "schema" }}
 {{- $reqd := get . "required" }}
-{{- if not $reqd }}*{{ end }}
+{{- $ptr := not $reqd }}
+{{- with get $schema.Extensions "x-go-skip-optional-pointer" }}
+{{- $ptr = false }}
+{{- end }}
+{{- if $ptr }}*{{ end }}
 {{- with $schema.Items }}[]{{ include "ref-type" (dict "ref" . "required" true) }}
 {{- else }}interface{}
 {{- end }}
