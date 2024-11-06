@@ -2,9 +2,14 @@
 package server
 
 import (
+	"encoding/json"
+	"errors"
+	"time"
+
 	"github.com/labstack/echo/v4"
 )
 
+// EchoLike defines the interface used by either echo.Echo or echo.Group
 type EchoLike interface {
 	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
 	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
@@ -14,4 +19,34 @@ type EchoLike interface {
 	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
 	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
 	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+}
+
+// Duration wraps time.Duration to allows JSON Marshal/Unmarshal
+type Duration struct {
+	time.Duration
+}
+
+func (d Duration) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.String())
+}
+
+func (d *Duration) UnmarshalJSON(b []byte) error {
+	var v interface{}
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	switch value := v.(type) {
+	case float64:
+		d.Duration = time.Duration(value)
+		return nil
+	case string:
+		var err error
+		d.Duration, err = time.ParseDuration(value)
+		if err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.New("invalid duration")
+	}
 }

@@ -76,6 +76,8 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{- $reqd := get . "required" }}
 {{- if eq $schema.Format "date-time" }}
 {{- if not $reqd }}*{{ end }}time.Time
+{{- else if eq $schema.Format "duration" }}
+{{- if not $reqd }}*{{ end }}Duration
 {{- else }}
 {{- if not $reqd }}*{{ end }}string
 {{- end }}
@@ -129,15 +131,19 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{- $reqd := get . "required" }}
 {{- $rules := list }}
 {{- if $reqd }}
-{{- $rules = append $rules "required" }}
+  {{- $rules = append $rules "required" }}
 {{- else }}
-{{- $rules = append $rules "omitempty" }}
+  {{- $rules = append $rules "omitempty" }}
 {{- end }}
 {{- with $ref.Value }}
-{{- $childRules := include "validate-schema-rule" (dict "schema" $ref.Value) }}
-{{- if ne $childRules "" }}
-{{- $rules = append $rules $childRules }}
-{{- end }}
+  {{- with get .Extensions "x-validate-override-tags" }}
+    {{- $rules = (list .) }}
+  {{- else }}
+    {{- $childRules := include "validate-schema-rule" (dict "schema" $ref.Value) }}
+    {{- if ne $childRules "" }}
+      {{- $rules = append $rules $childRules }}
+    {{- end }}
+  {{- end }}
 {{- end }}{{ join "," $rules }}
 {{- end }}
 
@@ -148,7 +154,7 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{- if eq $schema.Type "string" }}
   {{- if eq $schema.Format "uuid" }}
   {{- $rules = append $rules "uuid" }}
-  {{- else if eq $schema.Format "email" }}
+  {{- else if eq $schema.Format "email,lowercase" }}
   {{- $rules = append $rules "uuid" }}
   {{- else if eq $schema.Format "date-time" }}
   {{- $rules = append $rules "datetime=2006-01-02T15:04:05Z07:00" }}
@@ -172,5 +178,8 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{- else if eq $schema.Type "array" }}
   {{- $rules = append $rules "dive" }}
   {{- $rules = append $rules (include "validate-ref-rule" (dict "ref" $schema.Items "required" true)) }}
+{{- end }}
+{{- with get $schema.Extensions "x-validate-extra-tags" }}
+  {{- $rules = append $rules . }}
 {{- end }}{{ join "," $rules }}
 {{- end }}

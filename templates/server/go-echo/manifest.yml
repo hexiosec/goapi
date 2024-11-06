@@ -5,13 +5,10 @@ render:
     template: init.tmpl
   - path: pkg.go
     for: root
-    template: pkg-go
-  - path: echo.go
+    template: pkg.tmpl
+  - path: types.go
     for: root
-    template: echo-go
-  - path: errors.go
-    for: root
-    template: errors-go
+    template: types.tmpl
   - path: "*_handler.go"
     for: tag
     template: handlers.tmpl

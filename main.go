@@ -21,6 +21,7 @@ func main() {
 	template := pflag.StringP("template", "t", "", "Generator template")
 	templatesPath := pflag.String("templates-path", "", "Path to template library")
 	verbose := pflag.BoolP("verbose", "v", false, "Turn on verbose messaging")
+	clean := pflag.Bool("clean", false, "Remove output folder if it already exists")
 	help := pflag.Bool("help", false, "Show help")
 	pflag.Parse()
 
@@ -51,7 +52,7 @@ func main() {
 		log.Fatal().Msgf("Load schema failed: %s", err)
 	}
 
-	if err := g.RenderTemplate(*template, *outputPath); err != nil {
+	if err := g.RenderTemplate(*template, *outputPath, *clean); err != nil {
 		log.Fatal().Msgf("Generate failed: %s", err)
 	}
 }
