@@ -10,7 +10,6 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/ettle/strcase"
-	"github.com/hexiosec/goapi"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )
@@ -28,15 +27,15 @@ type RenderTarget struct {
 	Template string `json:"template,omitempty"`
 }
 
-func GetManifest(name string, basePath *string) (*TemplateManifest, error) {
+func (g *Generator) GetManifest(name string) (*TemplateManifest, error) {
 	log.Debug().Msgf("Loading template manifest %s", name)
 	var buf []byte
 	var err error
 
-	if basePath == nil {
-		buf, err = goapi.TemplateFS.ReadFile(path.Join("templates", name, "manifest.yml"))
+	if g.extTemplates == nil {
+		buf, err = g.defaultTemplates.ReadFile(path.Join("templates", name, "manifest.yml"))
 	} else {
-		buf, err = os.ReadFile(path.Join(*basePath, name, "manifest.yml"))
+		buf, err = os.ReadFile(path.Join(*g.extTemplates, name, "manifest.yml"))
 	}
 
 	if err != nil {
@@ -52,7 +51,7 @@ func GetManifest(name string, basePath *string) (*TemplateManifest, error) {
 	return m, nil
 }
 
-func GetTemplate(name string, basePath *string) (*template.Template, error) {
+func (g *Generator) GetTemplate(name string) (*template.Template, error) {
 	log.Debug().Msgf("Loading template files %s", name)
 	t := template.New("root")
 
@@ -106,11 +105,11 @@ func GetTemplate(name string, basePath *string) (*template.Template, error) {
 		},
 	})
 
-	if basePath == nil {
-		_, err := t.ParseFS(goapi.TemplateFS, "templates/"+name+"/*.tmpl")
+	if g.extTemplates == nil {
+		_, err := t.ParseFS(g.defaultTemplates, "templates/"+name+"/*.tmpl")
 		return t, err
 	}
 
-	_, err := t.ParseGlob(*basePath + "/" + name + "/*.tmpl")
+	_, err := t.ParseGlob(*g.extTemplates + "/" + name + "/*.tmpl")
 	return t, err
 }

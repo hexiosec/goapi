@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"os"
 	"time"
@@ -10,6 +11,9 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/pflag"
 )
+
+//go:embed templates/*
+var TemplateFS embed.FS
 
 func main() {
 	inputSchema := pflag.StringP("input", "i", "./openapi.yml", "Input schema")
@@ -41,7 +45,7 @@ func main() {
 		templatesPath = nil
 	}
 
-	g := generator.NewGenerator(templatesPath)
+	g := generator.NewGenerator(TemplateFS, templatesPath)
 
 	if err := g.LoadSchema(*inputSchema); err != nil {
 		log.Fatal().Msgf("Load schema failed: %s", err)
