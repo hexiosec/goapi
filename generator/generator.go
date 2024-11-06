@@ -51,7 +51,7 @@ func (g *Generator) LoadSchema(path string) error {
 	return Validate(g.doc)
 }
 
-func (g *Generator) RenderTemplate(name string, outPath string) error {
+func (g *Generator) RenderTemplate(templates string, name string, outPath string) error {
 	if info, err := os.Stat(outPath); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return err
@@ -61,7 +61,7 @@ func (g *Generator) RenderTemplate(name string, outPath string) error {
 		os.RemoveAll(outPath)
 	}
 
-	manifestPath := path.Join("./templates", name, "manifest.yml")
+	manifestPath := path.Join(templates, name, "manifest.yml")
 	manifest, err := GetManifest(manifestPath)
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func (g *Generator) RenderTemplate(name string, outPath string) error {
 
 	log.Info().Msgf("Template: %s", manifest.Name)
 
-	templatePath := path.Join("./templates", name, "*.tmpl")
+	templatePath := path.Join(templates, name, "*.tmpl")
 	template, err := GetTemplate(templatePath)
 	if err != nil {
 		return err

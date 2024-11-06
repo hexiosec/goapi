@@ -8,17 +8,23 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{- end }}
 {{- end }}
 
+{{ define "go-safe-field-name" }}
+{{- regexReplaceAll ":" . "_" | toGoPascalCase }}
+{{- end }}
 
 {{ define "schema-type" }}
 {{- $schema := get . "schema" }}
 {{- $reqd := get . "required" }}
 {{- $tag := get . "tag" }}
-{{- if eq $schema.Type "string" }}{{ include "string-type" (dict "schema" $schema "required" $reqd) }}
-{{- else if eq $schema.Type "integer" }}{{ include "integer-type" (dict "schema" $schema "required" $reqd) }}
-{{- else if eq $schema.Type "number" }}{{ include "number-type" (dict "schema" $schema "required" $reqd) }}
-{{- else if eq $schema.Type "boolean" }}{{ include "boolean-type" (dict "schema" $schema) }}
-{{- else if eq $schema.Type "object" }}{{ include "object-type" (dict "schema" $schema "required" $reqd) }}
-{{- else if eq $schema.Type "array" }}{{ include "array-type" (dict "schema" $schema) }}
+{{- with $schema }}
+{{- if eq .Type "string" }}{{ include "string-type" (dict "schema" $schema "required" $reqd) }}
+{{- else if eq .Type "integer" }}{{ include "integer-type" (dict "schema" $schema "required" $reqd) }}
+{{- else if eq .Type "number" }}{{ include "number-type" (dict "schema" $schema "required" $reqd) }}
+{{- else if eq .Type "boolean" }}{{ include "boolean-type" (dict "schema" $schema) }}
+{{- else if eq .Type "object" }}{{ include "object-type" (dict "schema" $schema "required" $reqd) }}
+{{- else if eq .Type "array" }}{{ include "array-type" (dict "schema" $schema) }}
+{{- else }}any
+{{- end }}
 {{- else }}any
 {{- end }}
 {{- end }}
@@ -27,19 +33,19 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{ define "object-type" }}
 {{- $schema := get . "schema" }}
 {{- $reqd := get . "required" }}
-{{- $required := $schema.Required }}
+{{- $requiredFields := $schema.Required }}
 {{- with $schema.Properties }}
 {{- if not $reqd }}*{{ end }}struct {
   {{- range $key, $item := . }}
-  {{- $childReqd := has $key $required }}
+  {{- $childReqd := has $key $requiredFields }}
   {{- $tags := list }}
-  {{- if eq "query" (get $schema.Extensions "x-goapi-binding") }}
+  {{- if get $schema.Extensions "x-goapi-query-schema" }}
   {{- $tags = append $tags (include "query-tag" (dict "key" $key)) }}
   {{- else }}
   {{- $tags = append $tags (include "json-tag" (dict "key" $key "required" $childReqd)) }}
   {{- end }}
   {{- $tags = append $tags (include "validate-tag" (dict "ref" $item "required" $childReqd)) }}
-  {{ $key | toGoPascalCase }} {{ include "ref-type" (dict "ref" $item "required" $childReqd "tag" $key) }} `{{ $tags | join " " }}`
+  {{ include "go-safe-field-name" $key }} {{ include "ref-type" (dict "ref" $item "required" $childReqd "tag" $key) }} `{{ $tags | join " " }}`
   {{- end }}
 }
 {{- else }}map[string]interface{}
@@ -48,7 +54,7 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 
 {{ define "array-type" }}
 {{- $schema := get . "schema" }}
-{{- with $schema.Items }}[]{{ include "ref-type" (dict "ref" . "required" false) }}
+{{- with $schema.Items }}[]{{ include "ref-type" (dict "ref" . "required" true) }}
 {{- else}}interface{}
 {{- end }}
 {{- end }}
@@ -143,6 +149,6 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
   {{- end }}
 {{- else if eq $schema.Type "array" }}
   {{- $rules = append $rules "dive" }}
-  {{- $rules = append $rules (include "validate-ref-rule" (dict "ref" $schema.Items "required" false)) }}
+  {{- $rules = append $rules (include "validate-ref-rule" (dict "ref" $schema.Items "required" true)) }}
 {{- end }}{{ join "," $rules }}
 {{- end }}

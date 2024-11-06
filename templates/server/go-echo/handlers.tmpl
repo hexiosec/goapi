@@ -29,6 +29,7 @@
         {{- end }}
       {{- end }}
     {{- end }}
+    {{- /* Find a 2xx JSON response with a $ref to a schema type */}}
     {{- range $status, $response := .Responses }}
       {{- if hasPrefix "2" $status }}
         {{- $_ := set $op.Extensions "x-response-status" $status }}
@@ -80,11 +81,15 @@ type {{ $tag }}Endpoints interface {
 
 // Wrapper to expose {{ $tag }}Endpoints functions as echo handlers/middleware
 type {{ $tag }}RouteHandlers struct {
+  validate *validator.Validate
   wrapper {{ $tag }}Endpoints
 }
 
 func New{{ $tag }}RouteHandlers(wrapper {{ $tag }}Endpoints) *{{ $tag }}RouteHandlers {
-  return &{{ $tag }}RouteHandlers{wrapper}
+  return &{{ $tag }}RouteHandlers{
+    validate: validator.New(validator.WithRequiredStructEnabled()),
+    wrapper: wrapper,
+  }
 }
 
 {{- range $ops }}
@@ -104,6 +109,7 @@ func (r *{{ $tag }}RouteHandlers) {{ $middleware }}(next echo.HandlerFunc) echo.
     {{ end }}
     {{- end }}
 
+    {{- include "operation-validate-request-query" . }}
     {{- include "operation-validate-request-body" . }}
     return next(c)
   }
@@ -115,19 +121,21 @@ func (r *{{ $tag }}RouteHandlers) {{ $handler }}(c echo.Context) error {
   {{- range .Parameters }}
   {{- if eq .Value.In "path" }}
   {{- $var := include "param-arg-name" . }}
-  // Path Parameter: {{ .Value.Name }}
   {{ $var }} := c.Get("param.{{ .Value.Name }}").(string)
   {{- $args = append $args $var }}
-  {{ end }}
+  {{- end }}
   {{- end }}
 
   {{- with get .Extensions "x-request-body-type" }}
-  // Body: {{ . }}
   body := c.Get("body").(*{{ . }})
   {{- $args = append $args "body" }}
   {{- end }}
 
-  {{- with get .Extensions "x-response-body-type" }}
+  {{- with get .Extensions "x-goapi-query-object" }}
+  query := c.Get("query").(*{{ . }})
+  {{- $args = append $args "query" }}
+  {{- end }}
+  {{ with get .Extensions "x-response-body-type" }}
   if res, err := r.wrapper.{{ $wrapper }}({{ $args | join ", " }}); err == nil {
     {{- with get $op.Extensions "x-response-status" }}
     return c.JSON({{ . }}, res)
