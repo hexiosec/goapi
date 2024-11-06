@@ -13,7 +13,8 @@ import (
 )
 
 type Generator struct {
-	doc *specv31.Document
+	extTemplates *string
+	doc          *specv31.Document
 }
 
 type TemplateContext struct {
@@ -22,8 +23,8 @@ type TemplateContext struct {
 	Config *TemplateManifest
 }
 
-func NewGenerator() *Generator {
-	return &Generator{}
+func NewGenerator(extTemplates *string) *Generator {
+	return &Generator{extTemplates: extTemplates}
 }
 
 func (g *Generator) LoadSchema(path string) error {
@@ -51,26 +52,24 @@ func (g *Generator) LoadSchema(path string) error {
 	return Validate(g.doc)
 }
 
-func (g *Generator) RenderTemplate(templates string, name string, outPath string) error {
+func (g *Generator) RenderTemplate(name string, outPath string) error {
 	if info, err := os.Stat(outPath); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
 	} else if info.IsDir() {
-		log.Info().Msgf("Removing existing output folder")
+		log.Warn().Msgf("Removing existing output folder")
 		os.RemoveAll(outPath)
 	}
 
-	manifestPath := path.Join(templates, name, "manifest.yml")
-	manifest, err := GetManifest(manifestPath)
+	manifest, err := GetManifest(name, g.extTemplates)
 	if err != nil {
 		return err
 	}
 
 	log.Info().Msgf("Template: %s", manifest.Name)
 
-	templatePath := path.Join(templates, name, "*.tmpl")
-	template, err := GetTemplate(templatePath)
+	template, err := GetTemplate(name, g.extTemplates)
 	if err != nil {
 		return err
 	}
@@ -83,6 +82,8 @@ func (g *Generator) RenderTemplate(templates string, name string, outPath string
 	}
 
 	for _, target := range manifest.Render {
+		log.Info().Msgf("Rendering target \"%s\"", target.Path)
+
 		switch target.For {
 		case "none":
 			buf := bytes.Buffer{}
@@ -131,16 +132,7 @@ func (g *Generator) RenderTemplate(templates string, name string, outPath string
 		}
 	}
 
-	// if manifest.Post != nil {
-	// 	t := template.New("post")
-	// 	t.Parse(*manifest.Post)
-	// 	buf := bytes.Buffer{}
-	// 	t.Execute(&buf, map[string]string{"OutputPath": outPath})
-	// 	_, err := exec.Command("sh", "-c", buf.String()).Output()
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
+	log.Info().Msg("Generate completed")
 
 	return nil
 }

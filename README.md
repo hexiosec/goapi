@@ -5,11 +5,13 @@ Generate server or client implementations for OpenAPI v3.1 schemas.
 ## Usage
 
 ```
-Usage of generate:
+Usage of generate:                               
+      --help                    Show help
   -i, --input string            Input schema (default "./openapi.yml")
   -o, --output string           Output folder (default "./output")
   -t, --template string         Generator template
-      --templates-path string   Path to template library (default "./templates")
+      --templates-path string   Path to template library
+  -v, --verbose                 Turn on verbose messaging
 ```
 
 ## Supported Languages
