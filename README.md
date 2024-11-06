@@ -18,10 +18,10 @@ Usage of generate:
 
 ### Server Implementation
 
-| Name    | Description                                                                        |
-| ------- | ---------------------------------------------------------------------------------- |
-| spec    | Regenerated spec YAML, with filtered output                                        |
-| go-echo | Golang Server interface using the [Echo](https://echo.labstack.com/) web framework |
+| Name                                            | Description                                                                        |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [spec](./templates/server/spec/README.md)       | Regenerated spec YAML, with filtered output                                        |
+| [go-echo](./templates/server/go-echo/README.md) | Golang Server interface using the [Echo](https://echo.labstack.com/) web framework |
 
 ### Client Implementation
 

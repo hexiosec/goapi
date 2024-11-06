@@ -1,5 +1,5 @@
-name: Go Gin Server
-description: Golang Gin-compatible server interface wrapper
+name: Go Echo Server
+description: Golang Echo-compatible server interface wrapper
 render:
   - for: none
     template: init.tmpl
