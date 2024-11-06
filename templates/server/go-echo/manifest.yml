@@ -1,9 +1,8 @@
 name: Go Gin Server
 description: Golang Gin-compatible server interface wrapper
 render:
-  # - path: go.mod
-  #   for: root
-  #   template: go-mod
+  - for: none
+    template: init.tmpl
   - path: pkg.go
     for: root
     template: pkg-go
@@ -15,4 +14,8 @@ render:
     template: errors-go
   - path: "*_handler.go"
     for: tag
-    template: handlers-go
+    template: handlers.tmpl
+  - path: models.go
+    for: root
+    template: models-go
+post: "goimports -w {{ .OutputPath }}"

@@ -1,0 +1,12 @@
+// This file contains initialisation and annotation operations to simplify other templates, and will not be written out to a file
+
+{{ range $route, $path := .Doc.Paths }}
+  {{ range $method, $op := $path.AsMap }}
+
+  // Set x-go-primary-tag to the first named tag
+  {{ $tag := index $op.Tags 0 }}
+  {{ set $op.Extensions "x-go-primary-tag" $tag }}
+  {{ debugf "Operation %s group %s" (list $op.OperationID $tag )}}
+
+  {{ end }}
+{{ end }}

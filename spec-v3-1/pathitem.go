@@ -50,14 +50,14 @@ func (d PathItemObject) AsMap() map[string]*Operation {
 }
 
 type Operation struct {
-	Tags        []string          `json:"tags,omitempty"`
-	Summary     string            `json:"summary,omitempty"`
-	Description string            `json:"description,omitempty"`
-	OperationId string            `json:"operationId,omitempty"`
-	Parameters  []Ref[*Parameter] `json:"parameters,omitempty"`
-	// RequestBody Ref[TODO] `json:"requestBody,omitempty"`
-	Responses  TODO `json:"responses,omitempty"`
-	Deprecated bool `json:"deprecated,omitempty"`
+	Tags        []string                  `json:"tags,omitempty"`
+	Summary     string                    `json:"summary,omitempty"`
+	Description string                    `json:"description,omitempty"`
+	OperationID string                    `json:"operationId,omitempty"`
+	Parameters  []Ref[*Parameter]         `json:"parameters,omitempty"`
+	RequestBody *Ref[*RequestBody]        `json:"requestBody,omitempty"`
+	Responses   map[string]Ref[*Response] `json:"responses,omitempty"`
+	Deprecated  bool                      `json:"deprecated,omitempty"`
 	// Security    TODO      `json:"security,omitempty"`
 
 	Extensions map[string]any `json:"-,omitempty"`
@@ -84,11 +84,11 @@ func (d *Operation) HasTag(name string) bool {
 }
 
 type Parameter struct {
-	Name            string       `json:"name"`
-	In              string       `json:"in"`
-	Description     string       `json:"description,omitempty"`
-	Required        bool         `json:"required,omitempty"`
-	Deprecated      bool         `json:"deprecated,omitempty"`
-	AllowEmptyValue bool         `json:"allowEmptyValue,omitempty"`
-	Schema          Ref[*Schema] `json:"schema,omitempty"`
+	Name            string        `json:"name"`
+	In              string        `json:"in"`
+	Description     string        `json:"description,omitempty"`
+	Required        bool          `json:"required,omitempty"`
+	Deprecated      bool          `json:"deprecated,omitempty"`
+	AllowEmptyValue bool          `json:"allowEmptyValue,omitempty"`
+	Schema          *Ref[*Schema] `json:"schema,omitempty"`
 }

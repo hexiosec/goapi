@@ -8,7 +8,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/Masterminds/sprig"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/ettle/strcase"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
@@ -18,6 +18,7 @@ type TemplateManifest struct {
 	Name        string          `json:"name,omitempty"`
 	Description string          `json:"description,omitempty"`
 	Render      []*RenderTarget `json:"render,omitempty"`
+	Post        *string         `json:"post,omitempty"`
 }
 
 type RenderTarget struct {
@@ -78,6 +79,18 @@ func GetTemplate(path string) (*template.Template, error) {
 		},
 		"toGoCamelCase": func(data interface{}) (string, error) {
 			return strcase.ToGoCamel(data.(string)), nil
+		},
+		"debugf": func(msg string, vars []interface{}) (string, error) {
+			log.Debug().Msgf(msg, vars...)
+			return "", nil
+		},
+		"warnf": func(msg string, vars []interface{}) (string, error) {
+			log.Warn().Msgf(msg, vars...)
+			return "", nil
+		},
+		"warn": func(data interface{}) (string, error) {
+			log.Warn().Msgf("Template warning: %s", data)
+			return "", nil
 		},
 	}
 

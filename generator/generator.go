@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"bytes"
 	"errors"
 	"os"
 	"path"
@@ -83,32 +84,63 @@ func (g *Generator) RenderTemplate(name string, outPath string) error {
 
 	for _, target := range manifest.Render {
 		switch target.For {
-		case "root":
-			f, err := os.OpenFile(path.Join(outPath, target.Path), os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+		case "none":
+			buf := bytes.Buffer{}
+
+			log.Debug().Msgf("Executing template %s", target.Template)
+
+			err = template.ExecuteTemplate(&buf, target.Template, &TemplateContext{Doc: g.doc})
 			if err != nil {
 				return err
 			}
+
+		case "root":
+			filePath := path.Join(outPath, target.Path)
+			f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+			if err != nil {
+				return err
+			}
+
+			log.Debug().Msgf("Executing template %s", target.Template)
 
 			err = template.ExecuteTemplate(f, target.Template, &TemplateContext{Doc: g.doc})
 			if err != nil {
 				return err
 			}
 
+			log.Info().Msgf("Wrote %s", filePath)
+
 		case "tag":
 			for _, tag := range g.doc.Tags {
 				targetPath := strings.Replace(target.Path, "*", tag.Name, 1)
-				f, err := os.OpenFile(path.Join(outPath, targetPath), os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+				filePath := path.Join(outPath, targetPath)
+				f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 				if err != nil {
 					return err
 				}
+
+				log.Debug().Msgf("Executing template %s for tag %s", target.Template, tag.Name)
 
 				err = template.ExecuteTemplate(f, target.Template, &TemplateContext{Doc: g.doc, Node: tag})
 				if err != nil {
 					return err
 				}
+
+				log.Info().Msgf("Wrote %s", filePath)
 			}
 		}
 	}
+
+	// if manifest.Post != nil {
+	// 	t := template.New("post")
+	// 	t.Parse(*manifest.Post)
+	// 	buf := bytes.Buffer{}
+	// 	t.Execute(&buf, map[string]string{"OutputPath": outPath})
+	// 	_, err := exec.Command("sh", "-c", buf.String()).Output()
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }

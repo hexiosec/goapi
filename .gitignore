@@ -1,1 +1,3 @@
 output/
+examples/*/server/
+./openapi.yml

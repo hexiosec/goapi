@@ -1,0 +1,47 @@
+{{ define "operation-validate-path-param" }}
+{{- $field := .Value.Name }}
+// Path Parameter: {{ .Value.Name }}
+{{- $var := include "param-arg-name" . }}
+{{ $var }} := c.Param({{ .Value.Name | quote}})
+{{- with .Value.Schema.Value }}
+{{- with .MinLength }}
+
+if len({{ $var }}) < {{ . }} {
+  return &ValidationError{"min_length", "parameter", {{ $field | quote }}, nil}
+}
+{{- end }}
+{{- with .MaxLength }}
+
+if len({{ $var }}) > {{ . }} {
+  return &ValidationError{"max_length", "parameter", {{ $field | quote }}, nil}
+}
+{{- end }}
+{{- with .Pattern }}
+
+if res, _ := regexp.MatchString(`{{ . }}`, {{ $var }}); !res  {
+  return &ValidationError{"pattern", "parameter", {{ $field | quote }}, nil}
+}
+{{- end }}
+{{- end }}
+
+c.Set("param.{{ .Value.Name }}", {{ $var }})
+{{- end }}
+
+
+{{ define "operation-validate-request-body" }}
+{{- $reqd := get .Extensions "x-request-body-required" }}
+{{- with get .Extensions "x-request-body-type" }}
+// Body: {{ . }}, Required: {{ $reqd }}
+body := &{{ . }}{}
+if err := (&echo.DefaultBinder{}).BindBody(c, &body); err != nil {
+  return err
+}
+
+validate := validator.New()
+if err := validate.Struct(body); err != nil {
+  return err
+}
+
+c.Set("body", body)
+{{- end }}
+{{- end }}
