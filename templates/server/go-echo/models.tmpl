@@ -42,6 +42,10 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{ define "object-type" }}
 {{- $schema := get . "schema" }}
 {{- $reqd := get . "required" }}
+{{- $ptr := not $reqd }}
+{{- with get $schema.Extensions "x-go-skip-optional-pointer" }}
+{{- $ptr = false }}
+{{- end }}
 {{- $requiredFields := $schema.Required }}
 {{- with $schema.Properties }}
 {{- if not $reqd }}*{{ end }}struct {
@@ -70,7 +74,7 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
   {{- end }}
 }
 {{- else }}
-{{- if not $reqd }}*{{ end }}map[string]interface{}
+{{- if $ptr }}*{{ end }}map[string]interface{}
 {{- end }}
 {{- end }}
 
