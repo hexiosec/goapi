@@ -31,6 +31,20 @@
 {{ define "operation-args" }}
 {{- $args := list "c echo.Context" }}
 {{- range .Parameters }}
+{{- if eq .Value.In "cookie" }}
+{{- $arg := cat (include "param-arg-name" .) "string" }}
+{{- $args = append $args $arg }}
+{{- end }}
+{{- end }}
+
+{{- range .Parameters }}
+{{- if eq .Value.In "header" }}
+{{- $arg := cat (include "param-arg-name" .) "string" }}
+{{- $args = append $args $arg }}
+{{- end }}
+{{- end }}
+
+{{- range .Parameters }}
 {{- if eq .Value.In "path" }}
 {{- $arg := cat (include "param-arg-name" .) "string" }}
 {{- $args = append $args $arg }}

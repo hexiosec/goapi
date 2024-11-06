@@ -212,7 +212,7 @@ func (r *StoreRouteHandlers) DeleteOrderValidator(next echo.HandlerFunc) echo.Ha
 			return err
 		}
 
-		c.Set("param.orderId", orderID)
+		c.Set("param.order_id", orderID)
 
 		return next(c)
 	}
@@ -220,7 +220,7 @@ func (r *StoreRouteHandlers) DeleteOrderValidator(next echo.HandlerFunc) echo.Ha
 
 // Handle requests to DELETE:/store/order/:orderId
 func (r *StoreRouteHandlers) DeleteOrderHandler(c echo.Context) error {
-	orderID := c.Get("param.orderId").(string)
+	orderID := c.Get("param.order_id").(string)
 
 	if err := r.wrapper.DeleteOrder(c, orderID); err == nil {
 		if !c.Response().Committed {
@@ -296,7 +296,7 @@ func (r *StoreRouteHandlers) GetOrderByIDValidator(next echo.HandlerFunc) echo.H
 			return err
 		}
 
-		c.Set("param.orderId", orderID)
+		c.Set("param.order_id", orderID)
 
 		return next(c)
 	}
@@ -304,7 +304,7 @@ func (r *StoreRouteHandlers) GetOrderByIDValidator(next echo.HandlerFunc) echo.H
 
 // Handle requests to GET:/store/order/:orderId
 func (r *StoreRouteHandlers) GetOrderByIDHandler(c echo.Context) error {
-	orderID := c.Get("param.orderId").(string)
+	orderID := c.Get("param.order_id").(string)
 
 	if res, err := r.wrapper.GetOrderByID(c, orderID); err == nil {
 		if !c.Response().Committed {

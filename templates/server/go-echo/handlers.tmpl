@@ -130,6 +130,18 @@ func New{{ $tag }}RouteHandlers(wrapper {{ $tag }}Endpoints) *{{ $tag }}RouteHan
 func (r *{{ $tag }}RouteHandlers) {{ $middleware }}(next echo.HandlerFunc) echo.HandlerFunc {
   return func(c echo.Context) error {
     {{- range .Parameters }}
+    {{- if eq .Value.In "cookie" }}
+    {{- include "operation-validate-cookie-param" . }}
+    {{ end }}
+    {{- end }}
+
+    {{- range .Parameters }}
+    {{- if eq .Value.In "header" }}
+    {{- include "operation-validate-header-param" . }}
+    {{ end }}
+    {{- end }}
+
+    {{- range .Parameters }}
     {{- if eq .Value.In "path" }}
     {{- include "operation-validate-path-param" . }}
     {{ end }}
@@ -144,10 +156,27 @@ func (r *{{ $tag }}RouteHandlers) {{ $middleware }}(next echo.HandlerFunc) echo.
 // Handle requests to {{ $method }}:{{ $path }}
 func (r *{{ $tag }}RouteHandlers) {{ $handler }}(c echo.Context) error {
   {{- $args := list "c" }}
+
+  {{- range .Parameters }}
+  {{- if eq .Value.In "cookie" }}
+  {{- $var := include "param-arg-name" . }}
+  {{ $var }} := c.Get("param.{{ .Value.Name | toSnakeCase }}").(string)
+  {{- $args = append $args $var }}
+  {{- end }}
+  {{- end }}
+
+  {{- range .Parameters }}
+  {{- if eq .Value.In "header" }}
+  {{- $var := include "param-arg-name" . }}
+  {{ $var }} := c.Get("param.{{ .Value.Name | toSnakeCase }}").(string)
+  {{- $args = append $args $var }}
+  {{- end }}
+  {{- end }}
+
   {{- range .Parameters }}
   {{- if eq .Value.In "path" }}
   {{- $var := include "param-arg-name" . }}
-  {{ $var }} := c.Get("param.{{ .Value.Name }}").(string)
+  {{ $var }} := c.Get("param.{{ .Value.Name | toSnakeCase }}").(string)
   {{- $args = append $args $var }}
   {{- end }}
   {{- end }}

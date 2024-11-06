@@ -230,7 +230,7 @@ func (r *PetsRouteHandlers) ShowPetByIDValidator(next echo.HandlerFunc) echo.Han
 			return err
 		}
 
-		c.Set("param.petId", petID)
+		c.Set("param.pet_id", petID)
 
 		return next(c)
 	}
@@ -238,7 +238,7 @@ func (r *PetsRouteHandlers) ShowPetByIDValidator(next echo.HandlerFunc) echo.Han
 
 // Handle requests to GET:/pets/:petId
 func (r *PetsRouteHandlers) ShowPetByIDHandler(c echo.Context) error {
-	petID := c.Get("param.petId").(string)
+	petID := c.Get("param.pet_id").(string)
 
 	if res, err := r.wrapper.ShowPetByID(c, petID); err == nil {
 		if !c.Response().Committed {

@@ -98,6 +98,9 @@ func (g *Generator) GetTemplate(name string) (*template.Template, error) {
 		"toGoCamelCase": func(data interface{}) (string, error) {
 			return strcase.ToGoCamel(data.(string)), nil
 		},
+		"toSnakeCase": func(data interface{}) (string, error) {
+			return strcase.ToSnake(data.(string)), nil
+		},
 		"debugf": func(msg string, vars []interface{}) (string, error) {
 			log.Debug().Msgf(msg, vars...)
 			return "", nil

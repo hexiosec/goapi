@@ -23,7 +23,7 @@ type PetEndpoints interface {
 
 	// Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing.
 	FindPetsByTags(c echo.Context, query *FindPetsByTagsQuery) (*FindPetsByTagsJSON200Response, error)
-	DeletePet(c echo.Context, petID string) error
+	DeletePet(c echo.Context, xAPIKey string, petID string) error
 
 	// Returns a single pet
 	GetPetByID(c echo.Context, petID string) (*Pet, error)
@@ -403,7 +403,8 @@ func (r *PetRouteHandlers) RegisterFindPetsByTagsRouteAt(path string, e EchoLike
 // ## Parameters
 //
 // - in: header
-//   name: api_key
+//   name: X-Api-Key
+//   required: true
 //   schema:
 //     type: string
 // - description: Pet id to delete
@@ -423,13 +424,21 @@ func (r *PetRouteHandlers) RegisterFindPetsByTagsRouteAt(path string, e EchoLike
 // Validate requests to DELETE:/pet/:petId
 func (r *PetRouteHandlers) DeletePetValidator(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		// Header Parameter: X-Api-Key
+		xAPIKey := c.Request().Header.Get("X-Api-Key")
+		if err := r.validate.Var(xAPIKey, "required"); err != nil {
+			return err
+		}
+
+		c.Set("param.x_api_key", xAPIKey)
+
 		// Path Parameter: petId
 		petID := c.Param("petId")
 		if err := r.validate.Var(petID, "required"); err != nil {
 			return err
 		}
 
-		c.Set("param.petId", petID)
+		c.Set("param.pet_id", petID)
 
 		return next(c)
 	}
@@ -437,9 +446,10 @@ func (r *PetRouteHandlers) DeletePetValidator(next echo.HandlerFunc) echo.Handle
 
 // Handle requests to DELETE:/pet/:petId
 func (r *PetRouteHandlers) DeletePetHandler(c echo.Context) error {
-	petID := c.Get("param.petId").(string)
+	xAPIKey := c.Get("param.x_api_key").(string)
+	petID := c.Get("param.pet_id").(string)
 
-	if err := r.wrapper.DeletePet(c, petID); err == nil {
+	if err := r.wrapper.DeletePet(c, xAPIKey, petID); err == nil {
 		if !c.Response().Committed {
 			return c.NoContent(http.StatusNoContent)
 		} else {
@@ -512,7 +522,7 @@ func (r *PetRouteHandlers) GetPetByIDValidator(next echo.HandlerFunc) echo.Handl
 			return err
 		}
 
-		c.Set("param.petId", petID)
+		c.Set("param.pet_id", petID)
 
 		return next(c)
 	}
@@ -520,7 +530,7 @@ func (r *PetRouteHandlers) GetPetByIDValidator(next echo.HandlerFunc) echo.Handl
 
 // Handle requests to GET:/pet/:petId
 func (r *PetRouteHandlers) GetPetByIDHandler(c echo.Context) error {
-	petID := c.Get("param.petId").(string)
+	petID := c.Get("param.pet_id").(string)
 
 	if res, err := r.wrapper.GetPetByID(c, petID); err == nil {
 		if !c.Response().Committed {
@@ -594,7 +604,7 @@ func (r *PetRouteHandlers) UpdatePetWithFormValidator(next echo.HandlerFunc) ech
 			return err
 		}
 
-		c.Set("param.petId", petID)
+		c.Set("param.pet_id", petID)
 
 		// Query: UpdatePetWithFormQuery
 		query := &UpdatePetWithFormQuery{}
@@ -611,7 +621,7 @@ func (r *PetRouteHandlers) UpdatePetWithFormValidator(next echo.HandlerFunc) ech
 
 // Handle requests to POST:/pet/:petId
 func (r *PetRouteHandlers) UpdatePetWithFormHandler(c echo.Context) error {
-	petID := c.Get("param.petId").(string)
+	petID := c.Get("param.pet_id").(string)
 	query := c.Get("query").(*UpdatePetWithFormQuery)
 
 	if err := r.wrapper.UpdatePetWithForm(c, petID, query); err == nil {
@@ -692,7 +702,7 @@ func (r *PetRouteHandlers) UploadFileValidator(next echo.HandlerFunc) echo.Handl
 			return err
 		}
 
-		c.Set("param.petId", petID)
+		c.Set("param.pet_id", petID)
 
 		// Query: UploadFileQuery
 		query := &UploadFileQuery{}
@@ -709,7 +719,7 @@ func (r *PetRouteHandlers) UploadFileValidator(next echo.HandlerFunc) echo.Handl
 
 // Handle requests to POST:/pet/:petId/uploadImage
 func (r *PetRouteHandlers) UploadFileHandler(c echo.Context) error {
-	petID := c.Get("param.petId").(string)
+	petID := c.Get("param.pet_id").(string)
 	query := c.Get("query").(*UploadFileQuery)
 
 	if res, err := r.wrapper.UploadFile(c, petID, query); err == nil {
