@@ -194,24 +194,24 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
   {{- with $schema.Enum }}
   {{- $rules = append $rules (list "oneof=" (. | join " ") | join "") }}
   {{- end }}
-  {{- with $schema.MaxLength }}
-  {{- $rules = append $rules (cat "max=" . | nospace) }}
+  {{- if $schema.MaxLength }}
+  {{- $rules = append $rules (cat "max=" ($schema.MaxLength | deref) | nospace) }}
   {{- end }}
-  {{- with $schema.MinLength }}
-  {{- $rules = append $rules (cat "min=" . | nospace) }}
+  {{- if $schema.MinLength }}
+  {{- $rules = append $rules (cat "min=" ($schema.MinLength | deref) | nospace) }}
   {{- end }}
 {{- else if eq $schema.Type "integer" }}
-  {{- with $schema.Maximum }}
-  {{- $rules = append $rules (cat "lte=" . | nospace) }}
+  {{- if $schema.Maximum }}
+  {{- $rules = append $rules (cat "lte=" ($schema.Maximum | deref) | nospace) }}
   {{- end }}
-  {{- with $schema.Minimum }}
-  {{- $rules = append $rules (cat "gte=" . | nospace) }}
+  {{- if $schema.Minimum }}
+  {{- $rules = append $rules (cat "gte=" ($schema.Minimum | deref) | nospace) }}
   {{- end }}
-  {{- with $schema.ExclusiveMaximum }}
-  {{- $rules = append $rules (cat "lt=" . | nospace) }}
+  {{- if $schema.ExclusiveMaximum }}
+  {{- $rules = append $rules (cat "lt=" ($schema.ExclusiveMaximum | deref) | nospace) }}
   {{- end }}
-  {{- with $schema.ExclusiveMinimum }}
-  {{- $rules = append $rules (cat "gt=" . | nospace) }}
+  {{- if $schema.ExclusiveMinimum }}
+  {{- $rules = append $rules (cat "gt=" ($schema.ExclusiveMinimum | deref) | nospace) }}
   {{- end }}
 {{- else if eq $schema.Type "array" }}
   {{- $rules = append $rules "dive" }}

@@ -16,15 +16,15 @@ type Schema struct {
 	AdditionalProperties *Ref[*Schema]           `json:"additionalProperties,omitempty"`
 
 	// Strings
-	MaxLength int    `json:"maxLength,omitempty"`
-	MinLength int    `json:"minLength,omitempty"`
-	Pattern   string `json:"pattern,omitempty"`
+	MaxLength *int    `json:"maxLength,omitempty"`
+	MinLength *int    `json:"minLength,omitempty"`
+	Pattern   *string `json:"pattern,omitempty"`
 
 	// Numbers
-	Minimum          float64 `json:"minimum,omitempty"`
-	Maximum          float64 `json:"maximum,omitempty"`
-	ExclusiveMinimum float64 `json:"exclusiveMinimum,omitempty"`
-	ExclusiveMaximum float64 `json:"exclusiveMaximum,omitempty"`
+	Minimum          *float64 `json:"minimum,omitempty"`
+	Maximum          *float64 `json:"maximum,omitempty"`
+	ExclusiveMinimum *float64 `json:"exclusiveMinimum,omitempty"`
+	ExclusiveMaximum *float64 `json:"exclusiveMaximum,omitempty"`
 
 	Type        string   `json:"type,omitempty"`
 	Format      string   `json:"format,omitempty"`

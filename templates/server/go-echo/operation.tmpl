@@ -5,12 +5,12 @@
 {{ $var }} := c.Param({{ .Value.Name | quote }})
 {{- with .Value.Schema.Value }}
 {{- $rules := list "required" }}
-{{- with .MinLength }}
-{{- $rule := list "min=" . | join "" }}
+{{- if .MinLength }}
+{{- $rule := list "min=" (.MinLength | deref) | join "" }}
 {{- $rules = append $rules $rule }}
 {{- end }}
-{{- with .MaxLength }}
-{{- $rule := list "max=" . | join "" }}
+{{- if .MaxLength }}
+{{- $rule := list "max=" (.MaxLength | deref) | join "" }}
 {{- $rules = append $rules $rule }}
 {{- end }}
 {{- with .Pattern }}
@@ -40,12 +40,12 @@ if cookie, err := c.Cookie({{ .Value.Name | quote }}); err == nil {
 {{- else }}
 {{- $rules = append $rules "omitempty" }}
 {{- end }}
-{{- with .MinLength }}
-{{- $rule := list "min=" . | join "" }}
+{{- if .MinLength }}
+{{- $rule := list "min=" (.MinLength | deref) | join "" }}
 {{- $rules = append $rules $rule }}
 {{- end }}
-{{- with .MaxLength }}
-{{- $rule := list "max=" . | join "" }}
+{{- if .MaxLength }}
+{{- $rule := list "max=" (.MaxLength | deref) | join "" }}
 {{- $rules = append $rules $rule }}
 {{- end }}
 {{- with .Pattern }}
@@ -72,12 +72,12 @@ c.Set("param.{{ .Value.Name | toSnakeCase }}", {{ $var }})
 {{- $rules = append $rules "omitempty" }}
 {{- end }}
 {{- with .Value.Schema.Value }}
-{{- with .MinLength }}
-{{- $rule := list "min=" . | join "" }}
+{{- if .MinLength }}
+{{- $rule := list "min=" (.MinLength | deref) | join "" }}
 {{- $rules = append $rules $rule }}
 {{- end }}
-{{- with .MaxLength }}
-{{- $rule := list "max=" . | join "" }}
+{{- if .MaxLength }}
+{{- $rule := list "max=" (.MaxLength | deref) | join "" }}
 {{- $rules = append $rules $rule }}
 {{- end }}
 {{- with .Pattern }}

@@ -85,7 +85,7 @@ type Order struct {
 // Pet
 type Pet struct {
 	Category  *Category `json:"category,omitempty" validate:"omitempty"`
-	ID        *int      `json:"id,omitempty" validate:"omitempty"`
+	ID        *int      `json:"id,omitempty" validate:"omitempty,gt=0"`
 	Name      string    `json:"name" validate:"required"`
 	PhotoURLs []string  `json:"photoUrls" validate:"required,dive,required"`
 

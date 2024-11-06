@@ -3,6 +3,7 @@ package generator
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -67,6 +68,18 @@ func (g *Generator) GetTemplate(name string) (*template.Template, error) {
 			}
 
 			return buf.String(), nil
+		},
+		"deref": func(data interface{}) (string, error) {
+			if ptr, ok := data.(*float64); ok {
+				val := *ptr
+				if float64(int(val)) == val {
+					return fmt.Sprintf("%d", int(val)), nil
+				}
+				return fmt.Sprintf("%f", *ptr), nil
+			} else if ptr, ok := data.(*int); ok {
+				return fmt.Sprintf("%d", *ptr), nil
+			}
+			return "", fmt.Errorf("deref: unrecognised %s", data)
 		},
 		"json": func(data interface{}) (string, error) {
 			buf, err := json.Marshal(data)

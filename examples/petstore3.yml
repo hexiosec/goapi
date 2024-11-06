@@ -731,6 +731,7 @@ components:
           type: integer
           format: int64
           example: 10
+          exclusiveMinimum: 0
         name:
           type: string
           example: doggie
