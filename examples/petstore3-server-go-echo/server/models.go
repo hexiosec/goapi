@@ -29,9 +29,9 @@ type CreateUsersWithListInputJSONRequest []User
 
 // Customer
 type Customer struct {
-	Address  []Address `json:"address,omitempty" validate:"omitempty,dive,required"`
-	ID       *int      `json:"id,omitempty" validate:"omitempty"`
-	Username *string   `json:"username,omitempty" validate:"omitempty"`
+	Address  *[]Address `json:"address,omitempty" validate:"omitempty,dive,required"`
+	ID       *int       `json:"id,omitempty" validate:"omitempty"`
+	Username *string    `json:"username,omitempty" validate:"omitempty"`
 }
 
 // FindPetsByStatusJSON200Response
@@ -51,7 +51,7 @@ type FindPetsByTagsJSON200Response []Pet
 type FindPetsByTagsQuery struct {
 
 	// Tags to filter by
-	Tags []string `query:"tags" validate:"omitempty,dive,required"`
+	Tags *[]string `query:"tags" validate:"omitempty,dive,required"`
 }
 
 // GetInventoryJSON200Response
@@ -91,7 +91,7 @@ type Pet struct {
 
 	// pet status in the store
 	Status *string `json:"status,omitempty" validate:"omitempty,oneof=available pending sold"`
-	Tags   []Tag   `json:"tags,omitempty" validate:"omitempty,dive,required"`
+	Tags   *[]Tag  `json:"tags,omitempty" validate:"omitempty,dive,required"`
 }
 
 // Tag
