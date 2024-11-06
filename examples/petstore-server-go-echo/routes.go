@@ -1,8 +1,5 @@
 package main
 
-//go:generate go run ../../cmd/generate -i ../petstore.yml -o ./server -t server/go-echo --templates-path ../../templates
-//go:generate go run golang.org/x/tools/cmd/goimports@latest -w ./server
-
 import (
 	"log"
 	"net/http"

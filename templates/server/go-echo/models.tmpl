@@ -3,7 +3,6 @@
 {{ include "package" . }}
 
 {{- range $key, $schema := .Doc.Components.Schemas }}
-// #/components/schemas/{{ $key }}
 type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true) }}
 {{- end }}
 {{- end }}
