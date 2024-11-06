@@ -168,11 +168,11 @@ func (r *{{ $tag }}RouteHandlers) {{ $handler }}(c echo.Context) error {
 
 // Register the handler and middleware for {{ $method }}:{{ $path }} at the default path
 func (r *{{ $tag }}RouteHandlers) Register{{ $wrapper }}Route(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
-  return r.Register{{ $wrapper }}RouteAt(e, string({{ include "operation-path-name" . }}), m...)
+  return r.Register{{ $wrapper }}RouteAt(string({{ include "operation-path-name" . }}), e, m...)
 }
 
 // Register the handler and middleware for {{ $method }}:{{ $path }} at a custom path
-func (r *{{ $tag }}RouteHandlers) Register{{ $wrapper }}RouteAt(e EchoLike, path string, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *{{ $tag }}RouteHandlers) Register{{ $wrapper }}RouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
   mw := append([]echo.MiddlewareFunc{r.{{ $middleware }}}, m...)
   return e.{{ $method }}(path, r.{{ $handler }}, mw...)
 }
