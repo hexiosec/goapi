@@ -193,7 +193,7 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
   {{- else if eq $schema.Format "email" }}
   {{- $rules = append $rules "email,lowercase" }}
   {{- else if eq $schema.Format "date-time" }}
-  {{- $rules = append $rules "datetime=2006-01-02T15:04:05Z07:00" }}
+  {{- /* Nothing to do, JSON decode will fail if not valid */}}
   {{- end }}
   {{- with $schema.Enum }}
   {{- $rules = append $rules (list "oneof=" (. | join " ") | join "") }}
