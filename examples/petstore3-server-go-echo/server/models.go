@@ -39,6 +39,8 @@ type FindPetsByStatusJSON200Response []Pet
 
 // FindPetsByStatusQuery
 type FindPetsByStatusQuery struct {
+
+	// Status values that need to be considered for filter
 	Status *string `query:"status" validate:"omitempty,oneof=available pending sold"`
 }
 
@@ -47,6 +49,8 @@ type FindPetsByTagsJSON200Response []Pet
 
 // FindPetsByTagsQuery
 type FindPetsByTagsQuery struct {
+
+	// Tags to filter by
 	Tags []string `query:"tags" validate:"omitempty,dive,required"`
 }
 
@@ -58,7 +62,11 @@ type LoginUserJSON200Response string
 
 // LoginUserQuery
 type LoginUserQuery struct {
+
+	// The password for login in clear text
 	Password *string `query:"password" validate:"omitempty"`
+
+	// The user name for login
 	Username *string `query:"username" validate:"omitempty"`
 }
 
@@ -94,12 +102,18 @@ type Tag struct {
 
 // UpdatePetWithFormQuery
 type UpdatePetWithFormQuery struct {
-	Name   *string `query:"name" validate:"omitempty"`
+
+	// Name of pet that needs to be updated
+	Name *string `query:"name" validate:"omitempty"`
+
+	// Status of pet that needs to be updated
 	Status *string `query:"status" validate:"omitempty"`
 }
 
 // UploadFileQuery
 type UploadFileQuery struct {
+
+	// Additional Metadata
 	AdditionalMetadata *string `query:"additionalMetadata" validate:"omitempty"`
 }
 

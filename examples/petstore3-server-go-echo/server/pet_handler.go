@@ -235,6 +235,7 @@ func (r *PetRouteHandlers) RegisterUpdatePetRouteAt(path string, e EchoLike, m .
 //   in: query
 //   name: status
 //   schema:
+//     description: Status values that need to be considered for filter
 //     enum:
 //         - available
 //         - pending
@@ -322,6 +323,7 @@ func (r *PetRouteHandlers) RegisterFindPetsByStatusRouteAt(path string, e EchoLi
 //   in: query
 //   name: tags
 //   schema:
+//     description: Tags to filter by
 //     items:
 //         type: string
 //     type: array
@@ -568,11 +570,13 @@ func (r *PetRouteHandlers) RegisterGetPetByIDRouteAt(path string, e EchoLike, m 
 //   in: query
 //   name: name
 //   schema:
+//     description: Name of pet that needs to be updated
 //     type: string
 // - description: Status of pet that needs to be updated
 //   in: query
 //   name: status
 //   schema:
+//     description: Status of pet that needs to be updated
 //     type: string
 //
 // ## Responses
@@ -658,6 +662,7 @@ func (r *PetRouteHandlers) RegisterUpdatePetWithFormRouteAt(path string, e EchoL
 //   in: query
 //   name: additionalMetadata
 //   schema:
+//     description: Additional Metadata
 //     type: string
 //
 // ## Request Body
