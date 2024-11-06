@@ -137,21 +137,29 @@ func (r *{{ $tag }}RouteHandlers) {{ $handler }}(c echo.Context) error {
   {{- end }}
   {{ with get .Extensions "x-response-body-type" }}
   if res, err := r.wrapper.{{ $wrapper }}({{ $args | join ", " }}); err == nil {
-    {{- with get $op.Extensions "x-response-status" }}
-    return c.JSON({{ . }}, res)
-    {{- else }}
-    return c.JSON(http.StatusOK, res)
-    {{- end }}
+    if !c.Response().Committed {
+      {{- with get $op.Extensions "x-response-status" }}
+      return c.JSON({{ . }}, res)
+      {{- else }}
+      return c.JSON(http.StatusOK, res)
+      {{- end }}
+    } else {
+      return nil
+    }
   } else {
     return err
   }
   {{- else }}
   if err := r.wrapper.{{ $wrapper }}({{ $args | join ", " }}); err == nil {
-    {{- with get $op.Extensions "x-response-status" }}
-    return c.NoContent({{ . }})
-    {{- else }}
-    return c.NoContent(http.StatusNoContent, res)
-    {{- end }}
+    if !c.Response().Committed {
+      {{- with get $op.Extensions "x-response-status" }}
+      return c.NoContent({{ . }})
+      {{- else }}
+      return c.NoContent(http.StatusNoContent, res)
+      {{- end }}
+    } else {
+      return nil
+    }
   } else {
     return err
   }

@@ -55,7 +55,11 @@ func (r *PetsRouteHandlers) ListPetsHandler(c echo.Context) error {
 	query := c.Get("query").(*ListPetsQuery)
 
 	if res, err := r.wrapper.ListPets(c, query); err == nil {
-		return c.JSON(200, res)
+		if !c.Response().Committed {
+			return c.JSON(200, res)
+		} else {
+			return nil
+		}
 	} else {
 		return err
 	}
@@ -93,7 +97,11 @@ func (r *PetsRouteHandlers) CreatePetsHandler(c echo.Context) error {
 	body := c.Get("body").(*Pet)
 
 	if err := r.wrapper.CreatePets(c, body); err == nil {
-		return c.NoContent(201)
+		if !c.Response().Committed {
+			return c.NoContent(201)
+		} else {
+			return nil
+		}
 	} else {
 		return err
 	}
@@ -115,7 +123,7 @@ func (r *PetsRouteHandlers) ShowPetByIDValidator(next echo.HandlerFunc) echo.Han
 	return func(c echo.Context) error {
 		// Path Parameter: petId
 		petID := c.Param("petId")
-		if err := r.validate.Var(petID, "required"); err != nil {
+		if err := r.validate.Var(petID, "required,max=1"); err != nil {
 			return err
 		}
 
@@ -130,7 +138,11 @@ func (r *PetsRouteHandlers) ShowPetByIDHandler(c echo.Context) error {
 	petID := c.Get("param.petId").(string)
 
 	if res, err := r.wrapper.ShowPetByID(c, petID); err == nil {
-		return c.JSON(200, res)
+		if !c.Response().Committed {
+			return c.JSON(200, res)
+		} else {
+			return nil
+		}
 	} else {
 		return err
 	}
