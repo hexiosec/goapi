@@ -6,7 +6,7 @@ type Tag struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 
-	Extensions map[string]any `json:"-,omitempty"`
+	Extensions map[string]any `json:"-"`
 }
 
 func (d *Tag) UnmarshalJSON(value []byte) error {

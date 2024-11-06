@@ -6,7 +6,7 @@ import (
 )
 
 type Extensible struct {
-	Extensions map[string]any `json:"-,omitempty"`
+	Extensions map[string]any `json:"-"`
 }
 
 func HandleExtensions(value []byte) (map[string]any, error) {

@@ -28,6 +28,13 @@ func (d *Ref[T]) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+func (d Ref[T]) MarshalJSON() ([]byte, error) {
+	if d.Ref != "" {
+		return json.Marshal(map[string]interface{}{"$ref": d.Ref})
+	}
+	return json.Marshal(d.Value)
+}
+
 func (d *Ref[T]) DeRef(lookup *Components) error {
 	if d.Ref == "" {
 		return nil

@@ -16,7 +16,7 @@ type Document struct {
 	Tags         []*Tag                    `json:"tags,omitempty"`
 	ExternalDocs TODO                      `json:"externalDocs,omitempty"`
 
-	Extensions map[string]any `json:"-,omitempty"`
+	Extensions map[string]any `json:"-"`
 }
 
 func (d *Document) UnmarshalJSON(value []byte) error {

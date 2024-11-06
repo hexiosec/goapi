@@ -60,7 +60,7 @@ type Operation struct {
 	Deprecated  bool                      `json:"deprecated,omitempty"`
 	// Security    TODO      `json:"security,omitempty"`
 
-	Extensions map[string]any `json:"-,omitempty"`
+	Extensions map[string]any `json:"-"`
 }
 
 func (d *Operation) UnmarshalJSON(value []byte) error {

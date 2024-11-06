@@ -28,14 +28,50 @@ func NewPetsRouteHandlers(wrapper PetsEndpoints) *PetsRouteHandlers {
 	}
 }
 
+//------------------------------------------------------------------------------
+// # listPets: List all pets
+//
+// GET:/pets
+//
+// ## Parameters
+//
+// - description: How many items to return at one time (max 100)
+//   in: query
+//   name: limit
+//   schema:
+//     format: int32
+//     maximum: 100
+//     type: integer
+//
+// ## Responses
+//
+// "200":
+//     content:
+//         application/json:
+//             schema:
+//                 $ref: '#/components/schemas/Pets'
+//     description: A paged array of pets
+//     headers:
+//         x-next:
+//             description: A link to the next page of responses
+//             schema:
+//                 type: string
+// default:
+//     content:
+//         application/json:
+//             schema:
+//                 $ref: '#/components/schemas/Error'
+//     description: unexpected error
+//------------------------------------------------------------------------------
+
 // Validate requests to GET:/pets
 func (r *PetsRouteHandlers) ListPetsValidator(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Query: ListPetsQuery
 		query := &ListPetsQuery{}
-		if err := (&echo.DefaultBinder{}).BindQueryParams(c, &query); err != nil {
+		if err := (&echo.DefaultBinder{}).BindQueryParams(c, query); err != nil {
 			return err
-		} else if err := r.validate.Struct(query); err != nil {
+		} else if err := r.validate.Struct(*query); err != nil {
 			return err
 		}
 
@@ -78,14 +114,39 @@ func (r *PetsRouteHandlers) RegisterListPetsRouteAt(path string, e EchoLike, m .
 	return e.GET(path, r.ListPetsHandler, mw...)
 }
 
+//------------------------------------------------------------------------------
+// # createPets: Create a pet
+//
+// POST:/pets
+//
+// ## Request Body
+//
+// content:
+//     application/json:
+//         schema:
+//             $ref: '#/components/schemas/Pet'
+// required: true
+//
+// ## Responses
+//
+// "201":
+//     description: Null response
+// default:
+//     content:
+//         application/json:
+//             schema:
+//                 $ref: '#/components/schemas/Error'
+//     description: unexpected error
+//------------------------------------------------------------------------------
+
 // Validate requests to POST:/pets
 func (r *PetsRouteHandlers) CreatePetsValidator(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// Body: Pet, Required: true
+		// Body: Pet
 		body := &Pet{}
-		if err := (&echo.DefaultBinder{}).BindBody(c, &body); err != nil {
+		if err := (&echo.DefaultBinder{}).BindBody(c, body); err != nil {
 			return err
-		} else if err := r.validate.Struct(body); err != nil {
+		} else if err := r.validate.Struct(*body); err != nil {
 			return err
 		}
 
@@ -127,6 +188,37 @@ func (r *PetsRouteHandlers) RegisterCreatePetsRouteAt(path string, e EchoLike, m
 	mw := append([]echo.MiddlewareFunc{r.CreatePetsValidator}, m...)
 	return e.POST(path, r.CreatePetsHandler, mw...)
 }
+
+//------------------------------------------------------------------------------
+// # showPetById: Info for a specific pet
+//
+// GET:/pets/:petId
+//
+// ## Parameters
+//
+// - description: The id of the pet to retrieve
+//   in: path
+//   name: petId
+//   required: true
+//   schema:
+//     maxLength: 1
+//     type: string
+//
+// ## Responses
+//
+// "200":
+//     content:
+//         application/json:
+//             schema:
+//                 $ref: '#/components/schemas/Pet'
+//     description: Expected response to a valid request
+// default:
+//     content:
+//         application/json:
+//             schema:
+//                 $ref: '#/components/schemas/Error'
+//     description: unexpected error
+//------------------------------------------------------------------------------
 
 // Validate requests to GET:/pets/:petId
 func (r *PetsRouteHandlers) ShowPetByIDValidator(next echo.HandlerFunc) echo.HandlerFunc {

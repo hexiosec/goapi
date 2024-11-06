@@ -9,11 +9,11 @@ type Schema struct {
 	OneOf []Ref[*Schema] `json:"oneOf,omitempty"`
 
 	// Arrays
-	Items Ref[*Schema] `json:"items,omitempty"`
+	Items *Ref[*Schema] `json:"items,omitempty"`
 
 	// Objects
 	Properties           map[string]Ref[*Schema] `json:"properties,omitempty"`
-	AdditionalProperties Ref[*Schema]            `json:"additionalProperties,omitempty"`
+	AdditionalProperties *Ref[*Schema]           `json:"additionalProperties,omitempty"`
 
 	// Strings
 	MaxLength int    `json:"maxLength,omitempty"`
@@ -30,7 +30,7 @@ type Schema struct {
 	Required    []string `json:"required,omitempty"`
 	Enum        []any    `json:"enum,omitempty"`
 
-	Extensions map[string]any `json:"-,omitempty"`
+	Extensions map[string]any `json:"-"`
 }
 
 func (d *Schema) UnmarshalJSON(value []byte) error {

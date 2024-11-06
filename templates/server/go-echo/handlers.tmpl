@@ -57,7 +57,7 @@
 {{ include "package" . }}
 
 import (
-  "http"
+  "net/http"
   "regexp"
   "strings"
 
@@ -68,6 +68,10 @@ import (
 // Interface for {{ $tag }} route endpoints
 type {{ $tag }}Endpoints interface {
   {{- range $ops }}
+  {{- with .Description }}
+
+  // {{ . }}
+  {{- end }}
   {{ include "operation-wrapper-name" . }}({{ include "operation-args" . }}) {{ include "operation-return" . }}
   {{- end }}
 }
@@ -93,6 +97,34 @@ func New{{ $tag }}RouteHandlers(wrapper {{ $tag }}Endpoints) *{{ $tag }}RouteHan
 {{- $getPath := include "operation-path-name" . }}
 {{- $method := get .Extensions "x-echo-method" }}
 {{- $path := get .Extensions "x-echo-path" }}
+
+//------------------------------------------------------------------------------
+// # {{ $op.OperationID }}{{ with $op.Summary }}: {{ . }}{{ end }}
+//
+// {{ $method }}:{{ $path }}
+{{- with $op.Description }}
+//
+{{ . | wrap 77 | comment "//" }}
+{{- end }}
+{{- with $op.Parameters }}
+//
+// ## Parameters
+//
+{{ . | yaml | trim | comment "//" }}
+{{- end }}
+{{- with $op.RequestBody }}
+//
+// ## Request Body
+//
+{{ . | yaml | trim | comment "//" }}
+{{- end }}
+{{- with $op.Responses }}
+//
+// ## Responses
+//
+{{ . | yaml | trim | comment "//" }}
+{{- end }}
+//------------------------------------------------------------------------------
 
 // Validate requests to {{ $method }}:{{ $path }}
 func (r *{{ $tag }}RouteHandlers) {{ $middleware }}(next echo.HandlerFunc) echo.HandlerFunc {
@@ -149,7 +181,7 @@ func (r *{{ $tag }}RouteHandlers) {{ $handler }}(c echo.Context) error {
       {{- with get $op.Extensions "x-response-status" }}
       return c.NoContent({{ . }})
       {{- else }}
-      return c.NoContent(http.StatusNoContent, res)
+      return c.NoContent(http.StatusNoContent)
       {{- end }}
     } else {
       return nil

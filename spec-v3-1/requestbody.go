@@ -7,7 +7,7 @@ type RequestBody struct {
 	Content     map[string]*MediaTypeObject `json:"content,omitempty"`
 	Required    bool                        `json:"required,omitempty"`
 
-	Extensions map[string]any `json:"-,omitempty"`
+	Extensions map[string]any `json:"-"`
 }
 
 func (d *RequestBody) UnmarshalJSON(value []byte) error {
@@ -30,7 +30,7 @@ type MediaTypeObject struct {
 	Schema   *Ref[*Schema]   `json:"schema,omitempty"`
 	Encoding map[string]TODO `json:"encoding,omitempty"`
 
-	Extensions map[string]any `json:"-,omitempty"`
+	Extensions map[string]any `json:"-"`
 }
 
 func (d *MediaTypeObject) UnmarshalJSON(value []byte) error {

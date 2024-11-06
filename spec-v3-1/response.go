@@ -8,7 +8,7 @@ type Response struct {
 	Content     map[string]*MediaTypeObject `json:"content,omitempty"`
 	Links       map[string]Ref[TODO]        `json:"links,omitempty"`
 
-	Extensions map[string]any `json:"-,omitempty"`
+	Extensions map[string]any `json:"-"`
 }
 
 func (d *Response) UnmarshalJSON(value []byte) error {
