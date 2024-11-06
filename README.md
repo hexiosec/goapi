@@ -5,7 +5,7 @@ Generate server or client implementations for OpenAPI v3.1 schemas.
 ## Usage
 
 ```
-Usage of generate:                               
+Usage of generate:
       --help                    Show help
   -i, --input string            Input schema (default "./openapi.yml")
   -o, --output string           Output folder (default "./output")
@@ -20,6 +20,7 @@ Usage of generate:
 
 | Name    | Description                                                                        |
 | ------- | ---------------------------------------------------------------------------------- |
+| spec    | Regenerated spec YAML, with filtered output                                        |
 | go-echo | Golang Server interface using the [Echo](https://echo.labstack.com/) web framework |
 
 ### Client Implementation

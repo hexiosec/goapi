@@ -15,4 +15,3 @@ render:
   - path: models.go
     for: root
     template: models-go
-post: "goimports -w {{ .OutputPath }}"

@@ -1,0 +1,66 @@
+{{- with .Raw }}
+{{- with .schema }}schema: {{ . | quote }}
+
+{{- end -}}
+openapi: {{ .openapi }}
+
+{{- with .info }}
+
+info:{{ . | yaml | trim | nindent 4 }}
+{{- end }}
+
+{{- with .externalDocs }}
+
+externalDocs:{{ . | yaml | trim | nindent 4 }}
+{{- end }}
+
+{{- with .servers }}
+
+servers:{{ . | yaml | trim | nindent 4 }}
+{{- end }}
+
+{{- with .tags }}
+
+tags:{{ . | yaml | trim | nindent 4 }}
+{{- end }}
+
+{{- with .security }}
+
+security:{{ . | yaml | trim | nindent 4 }}
+{{- end }}
+
+{{- with .paths }}
+
+paths:
+{{- range $route, $pathItem := . }}
+{{ $route | indent 4 }}:
+
+{{- with $pathItem.summary }}
+{{ indent 8 }}summary: {{ . }}
+{{- end }}
+
+{{- with $pathItem.description }}
+{{ indent 8 }}description: {{ . }}
+{{- end }}
+
+{{- range list "head" "options" "get" "post" "patch" "put" "delete" "trace" }}
+{{- $method := . }}
+{{- with get $pathItem . }}
+{{ $method | indent 8 }}:{{ . | yaml | trim | nindent 12 }}
+{{- end }}
+{{- end }}
+
+{{- end }}
+{{- end }}
+
+{{- with .webhooks }}
+
+webhooks:{{ . | yaml | trim | nindent 4 }}
+{{- end }}
+
+{{- with .components }}
+
+components:{{ . | yaml | trim | nindent 4 }}
+{{- end }}
+
+{{- end }}

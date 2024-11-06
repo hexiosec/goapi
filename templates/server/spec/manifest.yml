@@ -1,0 +1,6 @@
+name: OpenAPI Spec
+description: Exported OpenAPI spec with filtered output
+render:
+  - for: root
+    path: openapi_generated.yml
+    template: openapi.tmpl

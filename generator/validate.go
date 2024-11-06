@@ -128,6 +128,36 @@ func Validate(doc *specv31.Document) error {
 	return nil
 }
 
+func ValidateRaw(raw interface{}) (interface{}, bool) {
+	if m, ok := raw.(map[string]interface{}); ok {
+		for k, v := range m {
+			if k == "x-spec-ignore" {
+				// fmt.Printf("%#v\n", raw)
+				return raw, false
+			} else if strings.HasPrefix(k, "x-") {
+				delete(m, k)
+			} else {
+				vv, ok := ValidateRaw(v)
+				if !ok {
+					delete(m, k)
+				} else {
+					m[k] = vv
+				}
+			}
+		}
+	} else if s, ok := raw.([]interface{}); ok {
+		res := []interface{}{}
+		for _, v := range s {
+			vv, ok := ValidateRaw(v)
+			if ok {
+				res = append(res, vv)
+			}
+		}
+		return res, true
+	}
+	return raw, true
+}
+
 func genOperationID(path string, method string) string {
 	parts := []string{method}
 

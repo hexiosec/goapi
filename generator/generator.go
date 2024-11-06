@@ -16,11 +16,13 @@ import (
 type Generator struct {
 	defaultTemplates embed.FS
 	extTemplates     *string
+	raw              map[string]interface{}
 	doc              *specv31.Document
 }
 
 type TemplateContext struct {
 	Doc    *specv31.Document
+	Raw    map[string]interface{}
 	Node   any
 	Config *TemplateManifest
 }
@@ -40,6 +42,15 @@ func (g *Generator) LoadSchema(path string) error {
 	}
 
 	log.Debug().Msgf("Parsing spec %s", path)
+	err = yaml.Unmarshal(buf, &g.raw)
+	if err != nil {
+		return err
+	}
+
+	if res, ok := ValidateRaw(g.raw); ok {
+		g.raw = res.(map[string]interface{})
+	}
+
 	g.doc = &specv31.Document{}
 	err = yaml.Unmarshal(buf, g.doc)
 	if err != nil {
@@ -98,7 +109,7 @@ func (g *Generator) RenderTemplate(name string, outPath string, clean bool) erro
 
 			log.Debug().Msgf("Executing template %s", target.Template)
 
-			err = template.ExecuteTemplate(&buf, target.Template, &TemplateContext{Doc: g.doc})
+			err = template.ExecuteTemplate(&buf, target.Template, &TemplateContext{Doc: g.doc, Raw: g.raw})
 			if err != nil {
 				return err
 			}
@@ -112,7 +123,7 @@ func (g *Generator) RenderTemplate(name string, outPath string, clean bool) erro
 
 			log.Debug().Msgf("Executing template %s", target.Template)
 
-			err = template.ExecuteTemplate(f, target.Template, &TemplateContext{Doc: g.doc})
+			err = template.ExecuteTemplate(f, target.Template, &TemplateContext{Doc: g.doc, Raw: g.raw})
 			if err != nil {
 				return err
 			}
@@ -130,7 +141,7 @@ func (g *Generator) RenderTemplate(name string, outPath string, clean bool) erro
 
 				log.Debug().Msgf("Executing template %s for tag %s", target.Template, tag.Name)
 
-				err = template.ExecuteTemplate(f, target.Template, &TemplateContext{Doc: g.doc, Node: tag})
+				err = template.ExecuteTemplate(f, target.Template, &TemplateContext{Doc: g.doc, Node: tag, Raw: g.raw})
 				if err != nil {
 					return err
 				}
