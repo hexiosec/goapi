@@ -18,14 +18,18 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{- $reqd := get . "required" }}
 {{- $tag := get . "tag" }}
 {{- with $schema }}
-{{- if eq .Type "string" }}{{ include "string-type" (dict "schema" $schema "required" $reqd) }}
-{{- else if eq .Type "integer" }}{{ include "integer-type" (dict "schema" $schema "required" $reqd) }}
-{{- else if eq .Type "number" }}{{ include "number-type" (dict "schema" $schema "required" $reqd) }}
-{{- else if eq .Type "boolean" }}{{ include "boolean-type" (dict "schema" $schema "required" $reqd) }}
-{{- else if eq .Type "object" }}{{ include "object-type" (dict "schema" $schema "required" $reqd) }}
-{{- else if eq .Type "array" }}{{ include "array-type" (dict "schema" $schema) }}
-{{- else }}any
-{{- end }}
+  {{- with get .Extensions "x-go-type" }}
+    {{- if not $reqd }}*{{ end }}{{ . }}
+  {{- else }}
+    {{- if eq .Type "string" }}{{ include "string-type" (dict "schema" $schema "required" $reqd) }}
+    {{- else if eq .Type "integer" }}{{ include "integer-type" (dict "schema" $schema "required" $reqd) }}
+    {{- else if eq .Type "number" }}{{ include "number-type" (dict "schema" $schema "required" $reqd) }}
+    {{- else if eq .Type "boolean" }}{{ include "boolean-type" (dict "schema" $schema "required" $reqd) }}
+    {{- else if eq .Type "object" }}{{ include "object-type" (dict "schema" $schema "required" $reqd) }}
+    {{- else if eq .Type "array" }}{{ include "array-type" (dict "schema" $schema) }}
+    {{- else }}any
+    {{- end }}
+  {{- end }}
 {{- else }}any
 {{- end }}
 {{- end }}
@@ -70,7 +74,11 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{ define "string-type" }}
 {{- $schema := get . "schema" }}
 {{- $reqd := get . "required" }}
+{{- if eq $schema.Format "date-time" }}
+{{- if not $reqd }}*{{ end }}time.Time
+{{- else }}
 {{- if not $reqd }}*{{ end }}string
+{{- end }}
 {{- end }}
 
 {{ define "number-type" }}
@@ -140,6 +148,10 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{- if eq $schema.Type "string" }}
   {{- if eq $schema.Format "uuid" }}
   {{- $rules = append $rules "uuid" }}
+  {{- else if eq $schema.Format "email" }}
+  {{- $rules = append $rules "uuid" }}
+  {{- else if eq $schema.Format "date-time" }}
+  {{- $rules = append $rules "datetime=2006-01-02T15:04:05Z07:00" }}
   {{- end }}
   {{- with $schema.Enum }}
   {{- $rules = append $rules (list "oneof=" (. | join " ") | join "") }}
