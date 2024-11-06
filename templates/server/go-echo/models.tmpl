@@ -42,6 +42,12 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{- with $schema.Properties }}
 {{- if not $reqd }}*{{ end }}struct {
   {{- range $key, $item := . }}
+  {{- $fieldName := include "go-safe-field-name" $key }}
+  {{- with $item.Value }}
+  {{- with get .Extensions "x-go-name" }}
+  {{- $fieldName = . }}
+  {{- end }}
+  {{- end }}
   {{- $childReqd := has $key $requiredFields }}
   {{- $tags := list }}
   {{- if get $schema.Extensions "x-goapi-query-schema" }}
@@ -56,7 +62,7 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
   // {{ . }}
   {{- end }}
   {{- end }}
-  {{ include "go-safe-field-name" $key }} {{ include "ref-type" (dict "ref" $item "required" $childReqd "tag" $key) }} `{{ $tags | join " " }}`
+  {{ $fieldName }} {{ include "ref-type" (dict "ref" $item "required" $childReqd "tag" $key) }} `{{ $tags | join " " }}`
   {{- end }}
 }
 {{- else }}

@@ -87,7 +87,7 @@ type Pet struct {
 	Category  *Category `json:"category,omitempty" validate:"omitempty"`
 	ID        *int      `json:"id,omitempty" validate:"omitempty"`
 	Name      string    `json:"name" validate:"required"`
-	PhotoUrls []string  `json:"photoUrls" validate:"required,dive,required"`
+	PhotoURLs []string  `json:"photoUrls" validate:"required,dive,required"`
 
 	// pet status in the store
 	Status *string `json:"status,omitempty" validate:"omitempty,oneof=available pending sold"`
