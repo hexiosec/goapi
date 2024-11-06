@@ -20,8 +20,8 @@ func main() {
 	v.AutomaticEnv()
 	v.AddConfigPath(".")
 
-	pflag.StringP("input", "i", "openapi.yml", "Input schema")
-	pflag.StringP("output", "o", "output", "Output folder")
+	pflag.StringP("input", "i", "./openapi.yml", "Input schema")
+	pflag.StringP("output", "o", "./output", "Output folder")
 	pflag.StringP("template", "t", "", "Generator template")
 	pflag.String("templates-path", "./templates", "Path to template library")
 	pflag.Parse()
