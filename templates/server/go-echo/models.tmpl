@@ -207,6 +207,12 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
   {{- with $schema.Minimum }}
   {{- $rules = append $rules (cat "gte=" . | nospace) }}
   {{- end }}
+  {{- with $schema.ExclusiveMaximum }}
+  {{- $rules = append $rules (cat "lt=" . | nospace) }}
+  {{- end }}
+  {{- with $schema.ExclusiveMinimum }}
+  {{- $rules = append $rules (cat "gt=" . | nospace) }}
+  {{- end }}
 {{- else if eq $schema.Type "array" }}
   {{- $rules = append $rules "dive" }}
   {{- $rules = append $rules (include "validate-ref-rule" (dict "ref" $schema.Items "required" true)) }}

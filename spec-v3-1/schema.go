@@ -21,8 +21,10 @@ type Schema struct {
 	Pattern   string `json:"pattern,omitempty"`
 
 	// Numbers
-	Minimum float64 `json:"minimum,omitempty"`
-	Maximum float64 `json:"maximum,omitempty"`
+	Minimum          float64 `json:"minimum,omitempty"`
+	Maximum          float64 `json:"maximum,omitempty"`
+	ExclusiveMinimum float64 `json:"exclusiveMinimum,omitempty"`
+	ExclusiveMaximum float64 `json:"exclusiveMaximum,omitempty"`
 
 	Type        string   `json:"type,omitempty"`
 	Format      string   `json:"format,omitempty"`
