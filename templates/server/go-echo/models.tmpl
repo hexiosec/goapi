@@ -90,31 +90,47 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{ define "string-type" }}
 {{- $schema := get . "schema" }}
 {{- $reqd := get . "required" }}
+{{- $ptr := not $reqd }}
+{{- with get $schema.Extensions "x-go-skip-optional-pointer" }}
+{{- $ptr = false }}
+{{- end }}
 {{- if eq $schema.Format "date-time" }}
-{{- if not $reqd }}*{{ end }}time.Time
+{{- if $ptr }}*{{ end }}time.Time
 {{- else if eq $schema.Format "duration" }}
-{{- if not $reqd }}*{{ end }}Duration
+{{- if $ptr }}*{{ end }}Duration
 {{- else }}
-{{- if not $reqd }}*{{ end }}string
+{{- if $ptr }}*{{ end }}string
 {{- end }}
 {{- end }}
 
 {{ define "number-type" }}
 {{- $schema := get . "schema" }}
 {{- $reqd := get . "required" }}
-{{- if not $reqd }}*{{ end }}float64
+{{- $ptr := not $reqd }}
+{{- with get $schema.Extensions "x-go-skip-optional-pointer" }}
+{{- $ptr = false }}
+{{- end }}
+{{- if $ptr }}*{{ end }}float64
 {{- end }}
 
 {{ define "integer-type" }}
 {{- $schema := get . "schema" }}
 {{- $reqd := get . "required" }}
-{{- if not $reqd }}*{{ end }}int
+{{- $ptr := not $reqd }}
+{{- with get $schema.Extensions "x-go-skip-optional-pointer" }}
+{{- $ptr = false }}
+{{- end }}
+{{- if $ptr }}*{{ end }}int
 {{- end }}
 
 {{ define "boolean-type" }}
 {{- $schema := get . "schema" }}
 {{- $reqd := get . "required" }}
-{{- if not $reqd }}*{{ end }}bool
+{{- $ptr := not $reqd }}
+{{- with get $schema.Extensions "x-go-skip-optional-pointer" }}
+{{- $ptr = false }}
+{{- end }}
+{{- if $ptr }}*{{ end }}bool
 {{- end }}
 
 {{ define "ref-type" }}
