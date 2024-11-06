@@ -1,0 +1,6 @@
+name: TypeScript Fetch Client
+description: TypeScript fetch client
+render:
+  - path: index.ts
+    for: root
+    template: ts_index

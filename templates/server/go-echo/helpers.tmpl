@@ -1,0 +1,34 @@
+{{ define "echo-path" }}
+{{- . | replace "{" ":" | replace "}" "" }}
+{{- end }}
+
+{{ define "operation-wrapper-name" }}
+{{- .OperationId | toGoPascalCase }}
+{{- end }}
+
+{{ define "operation-path-name" }}
+{{- .OperationId | toGoPascalCase }}Path
+{{- end }}
+
+{{ define "operation-handler-name" }}
+{{- .OperationId | toGoPascalCase }}Handler
+{{- end }}
+
+{{ define "operation-middleware-name" }}
+{{- .OperationId | toGoPascalCase }}Validator
+{{- end }}
+
+{{ define "param-arg-name" }}
+{{- .Value.Name | toGoCamelCase }}
+{{- end }}
+
+{{ define "operation-args" }}
+{{- $args := list "c echo.Context" }}
+{{- range .Parameters }}
+{{- if eq .Value.In "path" }}
+{{- $arg := cat (include "param-arg-name" .) "string" }}
+{{- $args = append $args $arg }}
+{{- end }}
+{{- end }}
+{{- $args | join ", " }}
+{{- end }}
