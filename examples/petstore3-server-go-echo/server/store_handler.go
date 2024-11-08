@@ -45,6 +45,10 @@ func NewStoreRouteHandlers(wrapper StoreEndpoints) *StoreRouteHandlers {
 //
 // Returns a map of status codes to quantities
 //
+// ## Security
+//
+// - api_key
+//
 // ## Responses
 //
 // "200":
@@ -58,6 +62,8 @@ func NewStoreRouteHandlers(wrapper StoreEndpoints) *StoreRouteHandlers {
 // Validate requests to GET:/store/inventory
 func (r *StoreRouteHandlers) GetInventoryValidator(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		c.Set("security.api_key", []string{})
+
 		return next(c)
 	}
 }

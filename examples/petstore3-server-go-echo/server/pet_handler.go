@@ -51,6 +51,10 @@ func NewPetRouteHandlers(wrapper PetEndpoints) *PetRouteHandlers {
 //
 // Add a new pet to the store
 //
+// ## Security
+//
+// - petstore_auth: write:pets, read:pets
+//
 // ## Request Body
 //
 // content:
@@ -84,6 +88,8 @@ func NewPetRouteHandlers(wrapper PetEndpoints) *PetRouteHandlers {
 // Validate requests to POST:/pet
 func (r *PetRouteHandlers) AddPetValidator(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		c.Set("security.petstore_auth", []string{"write:pets", "read:pets"})
+
 		// Body: Pet
 		body := &Pet{}
 		if err := (&echo.DefaultBinder{}).BindBody(c, body); err != nil {
@@ -138,6 +144,10 @@ func (r *PetRouteHandlers) RegisterAddPetRouteAt(path string, e EchoLike, m ...e
 //
 // Update an existing pet by Id
 //
+// ## Security
+//
+// - petstore_auth: write:pets, read:pets
+//
 // ## Request Body
 //
 // content:
@@ -175,6 +185,8 @@ func (r *PetRouteHandlers) RegisterAddPetRouteAt(path string, e EchoLike, m ...e
 // Validate requests to PUT:/pet
 func (r *PetRouteHandlers) UpdatePetValidator(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		c.Set("security.petstore_auth", []string{"write:pets", "read:pets"})
+
 		// Body: Pet
 		body := &Pet{}
 		if err := (&echo.DefaultBinder{}).BindBody(c, body); err != nil {
@@ -229,6 +241,11 @@ func (r *PetRouteHandlers) RegisterUpdatePetRouteAt(path string, e EchoLike, m .
 //
 // Multiple status values can be provided with comma separated strings
 //
+// ## Security
+//
+// - public
+// - petstore_auth: write:pets, read:pets
+//
 // ## Parameters
 //
 // - description: Status values that need to be considered for filter
@@ -262,6 +279,9 @@ func (r *PetRouteHandlers) RegisterUpdatePetRouteAt(path string, e EchoLike, m .
 // Validate requests to GET:/pet/findByStatus
 func (r *PetRouteHandlers) FindPetsByStatusValidator(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		c.Set("security.public", []string{})
+		c.Set("security.petstore_auth", []string{"write:pets", "read:pets"})
+
 		// Query: FindPetsByStatusQuery
 		query := &FindPetsByStatusQuery{}
 		if err := (&echo.DefaultBinder{}).BindQueryParams(c, query); err != nil {
@@ -317,6 +337,10 @@ func (r *PetRouteHandlers) RegisterFindPetsByStatusRouteAt(path string, e EchoLi
 // Multiple tags can be provided with comma separated strings. Use tag1, tag2,
 // tag3 for testing.
 //
+// ## Security
+//
+// - petstore_auth: write:pets, read:pets
+//
 // ## Parameters
 //
 // - description: Tags to filter by
@@ -353,6 +377,8 @@ func (r *PetRouteHandlers) RegisterFindPetsByStatusRouteAt(path string, e EchoLi
 // Validate requests to GET:/pet/findByTags
 func (r *PetRouteHandlers) FindPetsByTagsValidator(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		c.Set("security.petstore_auth", []string{"write:pets", "read:pets"})
+
 		// Query: FindPetsByTagsQuery
 		query := &FindPetsByTagsQuery{}
 		if err := (&echo.DefaultBinder{}).BindQueryParams(c, query); err != nil {
@@ -405,6 +431,10 @@ func (r *PetRouteHandlers) RegisterFindPetsByTagsRouteAt(path string, e EchoLike
 //
 // DELETE:/pet/:petId
 //
+// ## Security
+//
+// - petstore_auth: write:pets, read:pets
+//
 // ## Parameters
 //
 // - in: header
@@ -429,6 +459,8 @@ func (r *PetRouteHandlers) RegisterFindPetsByTagsRouteAt(path string, e EchoLike
 // Validate requests to DELETE:/pet/:petId
 func (r *PetRouteHandlers) DeletePetValidator(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		c.Set("security.petstore_auth", []string{"write:pets", "read:pets"})
+
 		// Header Parameter: X-Api-Key
 		xAPIKey := c.Request().Header.Get("X-Api-Key")
 		if err := r.validate.Var(xAPIKey, "required"); err != nil {
@@ -491,6 +523,11 @@ func (r *PetRouteHandlers) RegisterDeletePetRouteAt(path string, e EchoLike, m .
 //
 // Returns a single pet
 //
+// ## Security
+//
+// - api_key
+// - petstore_auth: write:pets, read:pets
+//
 // ## Parameters
 //
 // - description: ID of pet to return
@@ -521,6 +558,10 @@ func (r *PetRouteHandlers) RegisterDeletePetRouteAt(path string, e EchoLike, m .
 // Validate requests to GET:/pet/:petId
 func (r *PetRouteHandlers) GetPetByIDValidator(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		c.Set("security.api_key", []string{})
+
+		c.Set("security.petstore_auth", []string{"write:pets", "read:pets"})
+
 		// Path Parameter: petId
 		petID := c.Param("petId")
 		if err := r.validate.Var(petID, "required"); err != nil {
@@ -572,6 +613,10 @@ func (r *PetRouteHandlers) RegisterGetPetByIDRouteAt(path string, e EchoLike, m 
 //
 // POST:/pet/:petId
 //
+// ## Security
+//
+// - petstore_auth: write:pets, read:pets
+//
 // ## Parameters
 //
 // - description: ID of pet that needs to be updated
@@ -603,6 +648,8 @@ func (r *PetRouteHandlers) RegisterGetPetByIDRouteAt(path string, e EchoLike, m 
 // Validate requests to POST:/pet/:petId
 func (r *PetRouteHandlers) UpdatePetWithFormValidator(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		c.Set("security.petstore_auth", []string{"write:pets", "read:pets"})
+
 		// Path Parameter: petId
 		petID := c.Param("petId")
 		if err := r.validate.Var(petID, "required"); err != nil {
@@ -664,6 +711,10 @@ func (r *PetRouteHandlers) RegisterUpdatePetWithFormRouteAt(path string, e EchoL
 //
 // POST:/pet/:petId/uploadImage
 //
+// ## Security
+//
+// - petstore_auth: write:pets, read:pets
+//
 // ## Parameters
 //
 // - description: ID of pet to update
@@ -701,6 +752,8 @@ func (r *PetRouteHandlers) RegisterUpdatePetWithFormRouteAt(path string, e EchoL
 // Validate requests to POST:/pet/:petId/uploadImage
 func (r *PetRouteHandlers) UploadFileValidator(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		c.Set("security.petstore_auth", []string{"write:pets", "read:pets"})
+
 		// Path Parameter: petId
 		petID := c.Param("petId")
 		if err := r.validate.Var(petID, "required"); err != nil {

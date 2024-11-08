@@ -112,6 +112,20 @@ func New{{ $tag }}RouteHandlers(wrapper {{ $tag }}Endpoints) *{{ $tag }}RouteHan
 //
 {{ . | wrap 77 | comment "//" }}
 {{- end }}
+{{- with $op.Security }}
+//
+// ## Security
+//
+{{- range . }}
+{{- if eq 0 (len .) }}
+// - public
+{{- else }}
+{{- range $k, $v := . }}
+// - {{ $k }}{{ with $v }}: {{ . | join ", " }}{{ end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- with $op.Parameters }}
 //
 // ## Parameters
@@ -135,6 +149,18 @@ func New{{ $tag }}RouteHandlers(wrapper {{ $tag }}Endpoints) *{{ $tag }}RouteHan
 // Validate requests to {{ $method }}:{{ $path }}
 func (r *{{ $tag }}RouteHandlers) {{ $middleware }}(next echo.HandlerFunc) echo.HandlerFunc {
   return func(c echo.Context) error {
+    {{- range .Security }}
+    {{- if eq 0 (len .) }}
+    c.Set("security.public", []string{})
+    {{- else }}
+    {{- range $key, $sec := . }}
+    {{- $v := list }}
+    {{- range $sec }}{{ $v = append $v (. | quote) }}{{ end }}
+    c.Set("security.{{ $key | toSnakeCase }}", {{ join "" (list "[]string{" ($v | join ", ") "}") }})
+    {{- end }}
+    {{ end }}
+    {{- end }}
+
     {{- range .Parameters }}
     {{- if eq .Value.In "cookie" }}
     {{- include "operation-validate-cookie-param" . }}

@@ -14,7 +14,7 @@ type Operation struct {
 	RequestBody *Ref[*RequestBody]         `json:"requestBody,omitempty"`
 	Responses   map[string]*Ref[*Response] `json:"responses,omitempty"`
 	Deprecated  bool                       `json:"deprecated,omitempty"`
-	// Security    TODO      `json:"security,omitempty"`
+	Security    []map[string][]string      `json:"security,omitempty"`
 
 	Extensions map[string]any `json:"-"`
 }
