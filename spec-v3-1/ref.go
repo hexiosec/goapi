@@ -52,13 +52,28 @@ func (d *Ref[T]) DeRef(lookup *Components) error {
 	switch parts[2] {
 	case "schemas":
 		target, ok = lookup.Schemas[parts[3]]
+	case "parameters":
+		target, ok = lookup.Parameters[parts[3]]
+	case "responses":
+		target, ok = lookup.Responses[parts[3]]
+	case "requestBodies":
+		target, ok = lookup.RequestBodies[parts[3]]
+	case "headers":
+		target, ok = lookup.Headers[parts[3]]
+	case "securitySchemes":
+		target, ok = lookup.SecuritySchemes[parts[3]]
 	}
 
 	if !ok || target == nil {
 		return fmt.Errorf("cannot de-ref %s in %s", parts[3], parts[2])
 	}
 
-	d.Value = target.(T)
+	if val, ok := target.(T); ok {
+		d.Value = val
+	} else {
+		return fmt.Errorf("found %s in %s but incorrect type returned for ref: %v", parts[3], parts[2], target)
+	}
+
 	d.Ref = ""
 	return nil
 }

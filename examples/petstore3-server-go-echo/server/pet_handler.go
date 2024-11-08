@@ -327,6 +327,11 @@ func (r *PetRouteHandlers) RegisterFindPetsByStatusRouteAt(path string, e EchoLi
 //     items:
 //         type: string
 //     type: array
+// - in: query
+//   name: limit
+//   schema:
+//     maximum: 1000
+//     type: integer
 //
 // ## Responses
 //

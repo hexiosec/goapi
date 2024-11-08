@@ -43,8 +43,11 @@ func Validate(doc *specv31.Document) error {
 				}
 			}
 
-			// If requestBody is set and not a ref, move to schemas
+			// Deref requestBody, if requestBody inner schema is set and not a ref, move to schemas
 			if op.RequestBody != nil {
+				if err := op.RequestBody.DeRef(doc.Components); err != nil {
+					return err
+				}
 				if op.RequestBody.Value != nil {
 					for mime, mto := range op.RequestBody.Value.Content {
 						if mime == "application/json" {
@@ -55,7 +58,6 @@ func Validate(doc *specv31.Document) error {
 									doc.Components.Schemas[key] = mto.Schema.Value
 									mto.Schema.Ref = "#/components/schemas/" + key
 									mto.Schema.Value = nil
-									op.Extensions["x-goapi-json-requestbody-object"] = key
 								}
 							}
 						}
@@ -63,26 +65,27 @@ func Validate(doc *specv31.Document) error {
 				}
 			}
 
-			// If a JSON response is present and not a ref, move to schemas
-			for status, ref := range op.Responses {
-				if ref.Value != nil {
-					for mime, mto := range ref.Value.Content {
-						if mime == "application/json" {
-							if mto.Schema != nil {
-								if mto.Schema.Value != nil {
-									key := strcase.ToGoPascal(op.OperationID) + "JSON" + status + "Response"
-									log.Debug().Msgf("Moving MediaTypeObject schema from operation %s %s response to %s", op.OperationID, status, key)
-									doc.Components.Schemas[key] = mto.Schema.Value
-									mto.Schema.Ref = "#/components/schemas/" + key
-									mto.Schema.Value = nil
-								}
+			// If a JSON response is present and schema is not a ref, move to schemas
+			for status, resp := range op.Responses {
+				if err := resp.DeRef(doc.Components); err != nil {
+					return err
+				}
+				for mime, mto := range resp.Value.Content {
+					if mime == "application/json" {
+						if mto.Schema != nil {
+							if mto.Schema.Value != nil {
+								key := strcase.ToGoPascal(op.OperationID) + "JSON" + status + "Response"
+								log.Debug().Msgf("Moving MediaTypeObject schema from operation %s %s response to %s", op.OperationID, status, key)
+								doc.Components.Schemas[key] = mto.Schema.Value
+								mto.Schema.Ref = "#/components/schemas/" + key
+								mto.Schema.Value = nil
 							}
 						}
 					}
 				}
 			}
 
-			// DeRef params
+			// DeRef params and inner schema
 			for _, param := range op.Parameters {
 				if err := param.DeRef(doc.Components); err != nil {
 					return err

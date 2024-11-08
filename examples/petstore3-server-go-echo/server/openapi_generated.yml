@@ -168,6 +168,7 @@ paths:
                     items:
                         type: string
                     type: array
+                - $ref: '#/components/parameters/LimitQuery'
             responses:
                 "200":
                     content:
@@ -417,6 +418,13 @@ paths:
                 - store
 
 components:
+    parameters:
+        LimitQuery:
+            in: query
+            name: limit
+            schema:
+                maximum: 1000
+                type: integer
     requestBodies:
         Pet:
             content:

@@ -10,42 +10,48 @@
       {{- $_ := set $op.Extensions "x-echo-method" ($method | upper) }}
       {{- $_ := set $op.Extensions "x-echo-path" (include "echo-path" $path) }}
     {{- end }}
-    {{- /* Store the requestBody struct type and required against the operation */}}
-    {{- with .RequestBody }}
+  {{- end }}
+{{- end }}
+{{- /* Process operations to simplify later template logic */}}
+{{- range $ops }}
+  {{- $op := . }}
+  {{- $path := get .Extensions "x-echo-path" }}
+  {{- $method := get .Extensions "x-echo-method" }}
+  {{- /* Store the requestBody struct type and required against the operation */}}
+  {{- with .RequestBody }}
+    {{- with .Value }}
+      {{- $_ := set $op.Extensions "x-request-body-required" .Required }}
+      {{- range $mime, $mto := .Content }}
+        {{- if eq $mime "application/json" }}
+          {{- with $mto }}
+            {{- with .Schema }}
+              {{- with .Ref }}
+                {{- $_ := set $op.Extensions "x-request-body-type" (include "ref-target-name" .) }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- else }}
+          {{- warnf "Unhandled MIME type %s for requestBody %s:%s" (list $mime $method $path) }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- /* Find a 2xx JSON response with a $ref to a schema type */}}
+  {{- range $status, $response := .Responses }}
+    {{- if hasPrefix "2" $status }}
+      {{- $_ := set $op.Extensions "x-response-status" $status }}
       {{- with .Value }}
-        {{- $_ := set $op.Extensions "x-request-body-required" .Required }}
         {{- range $mime, $mto := .Content }}
           {{- if eq $mime "application/json" }}
             {{- with $mto }}
               {{- with .Schema }}
                 {{- with .Ref }}
-                  {{- $_ := set $op.Extensions "x-request-body-type" (include "ref-target-name" .) }}
+                  {{- $_ := set $op.Extensions "x-response-body-type" (include "ref-target-name" .) }}
                 {{- end }}
               {{- end }}
             {{- end }}
           {{- else }}
-            {{- warnf "Unhandled MIME type %s for requestBody %s:%s" (list $mime $method $path) }}
-          {{- end }}
-        {{- end }}
-      {{- end }}
-    {{- end }}
-    {{- /* Find a 2xx JSON response with a $ref to a schema type */}}
-    {{- range $status, $response := .Responses }}
-      {{- if hasPrefix "2" $status }}
-        {{- $_ := set $op.Extensions "x-response-status" $status }}
-        {{- with .Value }}
-          {{- range $mime, $mto := .Content }}
-            {{- if eq $mime "application/json" }}
-              {{- with $mto }}
-                {{- with .Schema }}
-                  {{- with .Ref }}
-                    {{- $_ := set $op.Extensions "x-response-body-type" (include "ref-target-name" .) }}
-                  {{- end }}
-                {{- end }}
-              {{- end }}
-            {{- else }}
-              {{- warnf "Unhandled MIME type %s for reponse %s:%s code %s" (list $mime $method $path $status) }}
-            {{- end }}
+            {{- warnf "Unhandled MIME type %s for reponse %s:%s code %s" (list $mime $method $path $status) }}
           {{- end }}
         {{- end }}
       {{- end }}

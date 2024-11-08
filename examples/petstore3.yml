@@ -171,6 +171,7 @@ paths:
           items:
             type: string
           x-go-skip-optional-pointer: true
+      - $ref: "#/components/parameters/LimitQuery"
       responses:
         "200":
           description: successful operation
@@ -606,6 +607,13 @@ paths:
         "404":
           description: User not found
 components:
+  parameters:
+    LimitQuery:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        maximum: 1000
   schemas:
     Order:
       type: object

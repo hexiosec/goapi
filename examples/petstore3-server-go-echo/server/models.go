@@ -49,6 +49,7 @@ type FindPetsByTagsJSON200Response []Pet
 
 // FindPetsByTagsQuery
 type FindPetsByTagsQuery struct {
+	Limit *int `query:"limit" validate:"omitempty,lte=1000"`
 
 	// Tags to filter by
 	Tags []string `query:"tags" validate:"omitempty,dive,required"`
@@ -76,7 +77,7 @@ type Order struct {
 	ID       *int       `json:"id,omitempty" validate:"omitempty"`
 	PetID    *int       `json:"petId,omitempty" validate:"omitempty"`
 	Quantity *int       `json:"quantity,omitempty" validate:"omitempty"`
-	ShipDate *time.Time `json:"shipDate,omitempty" validate:"omitempty,datetime=2006-01-02T15:04:05Z07:00"`
+	ShipDate *time.Time `json:"shipDate,omitempty" validate:"omitempty"`
 
 	// Order Status
 	Status *string `json:"status,omitempty" validate:"omitempty,oneof=placed approved delivered"`
