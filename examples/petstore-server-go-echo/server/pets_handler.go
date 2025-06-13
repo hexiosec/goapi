@@ -202,7 +202,7 @@ func (r *PetsRouteHandlers) RegisterCreatePetsRouteAt(path string, e EchoLike, m
 //   name: petId
 //   required: true
 //   schema:
-//     maxLength: 1
+//     format: uuid
 //     type: string
 //
 // ## Responses
@@ -226,7 +226,7 @@ func (r *PetsRouteHandlers) ShowPetByIDValidator(next echo.HandlerFunc) echo.Han
 	return func(c echo.Context) error {
 		// Path Parameter: petId
 		petID := c.Param("petId")
-		if err := r.validate.Var(petID, "required,max=1"); err != nil {
+		if err := r.validate.Var(petID, "required,uuid"); err != nil {
 			return err
 		}
 

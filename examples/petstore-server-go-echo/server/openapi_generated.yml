@@ -71,7 +71,7 @@ paths:
                   name: petId
                   required: true
                   schema:
-                    maxLength: 1
+                    format: uuid
                     type: string
             responses:
                 "200":

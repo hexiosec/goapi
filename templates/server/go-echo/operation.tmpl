@@ -5,6 +5,9 @@
 {{ $var }} := c.Param({{ .Value.Name | quote }})
 {{- with .Value.Schema.Value }}
 {{- $rules := list "required" }}
+{{- if eq .Format "uuid" }}
+{{- $rules = append $rules "uuid" }}
+{{- end }}
 {{- if .MinLength }}
 {{- $rule := list "min=" (.MinLength | deref) | join "" }}
 {{- $rules = append $rules $rule }}
