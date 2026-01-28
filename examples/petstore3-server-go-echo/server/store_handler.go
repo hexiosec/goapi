@@ -47,7 +47,7 @@ func NewStoreRouteHandlers(wrapper StoreEndpoints) *StoreRouteHandlers {
 //
 // ## Security
 //
-// - api_key
+// - api_key: []
 //
 // ## Responses
 //
@@ -62,7 +62,9 @@ func NewStoreRouteHandlers(wrapper StoreEndpoints) *StoreRouteHandlers {
 // Validate requests to GET:/store/inventory
 func (r *StoreRouteHandlers) GetInventoryValidator(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		c.Set("security.api_key", []string{})
+		c.Set("security", []map[string][]string{
+			{"api_key": []string{}},
+		})
 
 		return next(c)
 	}

@@ -116,15 +116,7 @@ func New{{ $tag }}RouteHandlers(wrapper {{ $tag }}Endpoints) *{{ $tag }}RouteHan
 //
 // ## Security
 //
-{{- range . }}
-{{- if eq 0 (len .) }}
-// - public
-{{- else }}
-{{- range $k, $v := . }}
-// - {{ $k }}{{ with $v }}: {{ . | join ", " }}{{ end }}
-{{- end }}
-{{- end }}
-{{- end }}
+{{ . | yaml | trim | comment "//" }}
 {{- end }}
 {{- with $op.Parameters }}
 //
@@ -149,17 +141,19 @@ func New{{ $tag }}RouteHandlers(wrapper {{ $tag }}Endpoints) *{{ $tag }}RouteHan
 // Validate requests to {{ $method }}:{{ $path }}
 func (r *{{ $tag }}RouteHandlers) {{ $middleware }}(next echo.HandlerFunc) echo.HandlerFunc {
   return func(c echo.Context) error {
-    {{- range .Security }}
-    {{- if eq 0 (len .) }}
-    c.Set("security.public", []string{})
-    {{- else }}
+    {{- with .Security }}
+    c.Set("security", []map[string][]string{
+    {{- range . }}
+    {
     {{- range $key, $sec := . }}
-    {{- $v := list }}
-    {{- range $sec }}{{ $v = append $v (. | quote) }}{{ end }}
-    c.Set("security.{{ $key | toSnakeCase }}", {{ join "" (list "[]string{" ($v | join ", ") "}") }})
+      {{- $v := list }}
+      {{- range $sec }}{{ $v = append $v (. | quote) }}{{ end }}
+      {{- $key | quote }}: {{ join "" (list "[]string{" ($v | join ", ") "}") }},
     {{- end }}
+    },
+    {{- end }}
+    })
     {{ end }}
-    {{- end }}
 
     {{- range .Parameters }}
     {{- if eq .Value.In "cookie" }}

@@ -32,6 +32,7 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true 
     {{- else if eq .Type "boolean" }}{{ include "boolean-type" (dict "schema" $schema "required" $reqd) }}
     {{- else if eq .Type "object" }}{{ include "object-type" (dict "schema" $schema "required" $reqd "components" $components) }}
     {{- else if eq .Type "array" }}{{ include "array-type" (dict "schema" $schema "required" $reqd "components" $components) }}
+    {{- else if .AllOf }}{{ include "object-allof-type" (dict "schema" $schema "required" $reqd "components" $components) }}
     {{- else }}any
     {{- end }}
   {{- end }}
@@ -52,32 +53,62 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true 
 {{- with $schema.Properties }}
 {{- if not $reqd }}*{{ end }}struct {
   {{- range $key, $item := . }}
-  {{- $fieldName := include "go-safe-field-name" $key }}
-  {{- with $item.Value }}
-  {{- with get .Extensions "x-go-name" }}
-  {{- $fieldName = . }}
-  {{- end }}
-  {{- end }}
   {{- $childReqd := has $key $requiredFields }}
-  {{- $tags := list }}
-  {{- if get $schema.Extensions "x-goapi-query-schema" }}
-  {{- $tags = append $tags (include "query-tag" (dict "key" $key)) }}
-  {{- else }}
-  {{- $tags = append $tags (include "json-tag" (dict "key" $key "required" $childReqd)) }}
-  {{- end }}
-  {{- $tags = append $tags (include "validate-tag" (dict "ref" $item "required" $childReqd "components" $components)) }}
-  {{- with $item.Value }}
-  {{- with .Description }}
-
-  // {{ . }}
-  {{- end }}
-  {{- end }}
-  {{ $fieldName }} {{ include "ref-type" (dict "ref" $item "required" $childReqd "tag" $key "components" $components) }} `{{ $tags | join " " }}`
+  {{- include "object-field" (dict "key" $key "ref" $item "required" $childReqd "extensions" $schema.Extensions "components" $components ) }}
   {{- end }}
 }
 {{- else }}
 {{- if $ptr }}*{{ end }}map[string]interface{}
 {{- end }}
+{{- end }}
+
+{{ define "object-field" }}
+{{- $key := get . "key" }}
+{{- $ref := get . "ref" }}
+{{- $required := get . "required" }}
+{{- $extensions := get . "extensions" }}
+{{- $components := get . "components" }}
+{{- $fieldName := include "go-safe-field-name" $key }}
+{{- with $ref.Value }}
+{{- with get .Extensions "x-go-name" }}
+{{- $fieldName = . }}
+{{- end }}
+{{- end }}
+{{- $tags := list }}
+{{- if get $extensions "x-goapi-query-schema" }}
+{{- $tags = append $tags (include "query-tag" (dict "key" $key)) }}
+{{- else }}
+{{- $tags = append $tags (include "json-tag" (dict "key" $key "required" $required)) }}
+{{- end }}
+{{- $tags = append $tags (include "validate-tag" (dict "ref" $ref "required" $required "components" $components)) }}
+{{- with $ref.Value }}
+{{- with .Description }}
+
+// {{ . }}
+{{- end }}
+{{- end }}
+{{ $fieldName }} {{ include "ref-type" (dict "ref" $ref "required" $required "tag" $key "components" $components) }} `{{ $tags | join " " }}`
+{{- end }}
+
+{{ define "object-allof-type" }}
+{{- $schema := get . "schema" }}
+{{- $reqd := get . "required" }}
+{{- $components := get . "components" }}
+{{- if not $reqd }}*{{ end }}struct {
+  {{- range $schema.AllOf }}
+  {{- if .Ref }}
+  {{ include "ref-type" (dict "ref" . "required" true "components" $components) }}
+  {{- else }}
+  {{- $requiredFields := .Value.Required }}
+  {{- with .Value.Properties }}
+  {{- range $key, $item := . }}
+  {{- $childReqd := has $key $requiredFields }}
+  {{- include "object-field" (dict "key" $key "ref" $item "required" $childReqd "extensions" $schema.Extensions "components" $components ) }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+}
 {{- end }}
 
 {{ define "array-type" }}
