@@ -118,6 +118,10 @@ func (g *Generator) GetTemplate(name string) (*template.Template, error) {
 			log.Debug().Msgf(msg, vars...)
 			return "", nil
 		},
+		"infof": func(msg string, vars []interface{}) (string, error) {
+			log.Info().Msgf(msg, vars...)
+			return "", nil
+		},
 		"warnf": func(msg string, vars []interface{}) (string, error) {
 			log.Warn().Msgf(msg, vars...)
 			return "", nil

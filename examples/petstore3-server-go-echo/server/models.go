@@ -120,14 +120,18 @@ type UploadFileQuery struct {
 
 // User
 type User struct {
-	Email     *string `json:"email,omitempty" validate:"omitempty"`
-	FirstName *string `json:"firstName,omitempty" validate:"omitempty"`
-	ID        *int    `json:"id,omitempty" validate:"omitempty"`
-	LastName  *string `json:"lastName,omitempty" validate:"omitempty"`
-	Password  *string `json:"password,omitempty" validate:"omitempty"`
-	Phone     *string `json:"phone,omitempty" validate:"omitempty"`
+	Email     *string    `json:"email,omitempty" validate:"omitempty"`
+	FirstName *string    `json:"firstName,omitempty" validate:"omitempty"`
+	ID        *int       `json:"id,omitempty" validate:"omitempty"`
+	LastName  *string    `json:"lastName,omitempty" validate:"omitempty"`
+	Password  *string    `json:"password,omitempty" validate:"omitempty"`
+	Phone     *string    `json:"phone,omitempty" validate:"omitempty"`
+	State     *UserState `json:"state,omitempty" validate:"omitempty,oneof=active deleted"`
 
 	// User Status
 	UserStatus *int    `json:"userStatus,omitempty" validate:"omitempty"`
 	Username   *string `json:"username,omitempty" validate:"omitempty"`
 }
+
+// UserState
+type UserState string

@@ -171,6 +171,9 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{- else }}
   {{- $rules = append $rules "omitempty" }}
 {{- end }}
+{{- with get $ref.Extensions "x-validate-extra-tags" }}
+  {{- $rules = append $rules . }}
+{{- end }}
 {{- with $ref.Value }}
   {{- with get .Extensions "x-validate-override-tags" }}
     {{- $rules = (list .) }}

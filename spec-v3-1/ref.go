@@ -9,6 +9,8 @@ import (
 type Ref[T any] struct {
 	Ref   string `json:"$ref,omitempty"`
 	Value T      `json:"value,omitempty"`
+
+	Extensions map[string]any `json:"-"`
 }
 
 func (d *Ref[T]) UnmarshalJSON(value []byte) error {
@@ -24,6 +26,12 @@ func (d *Ref[T]) UnmarshalJSON(value []byte) error {
 			return err
 		}
 		d.Value = *t
+	}
+
+	if ext, err := HandleExtensions(value); err == nil {
+		d.Extensions = ext
+	} else {
+		return err
 	}
 	return nil
 }

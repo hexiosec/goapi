@@ -605,6 +605,8 @@ components:
                 phone:
                     example: "12345"
                     type: string
+                state:
+                    $ref: '#/components/schemas/UserState'
                 userStatus:
                     description: User Status
                     example: 1
@@ -616,6 +618,11 @@ components:
             type: object
             xml:
                 name: user
+        UserState:
+            enum:
+                - active
+                - deleted
+            type: string
     securitySchemes:
         api_key:
             in: header

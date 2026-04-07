@@ -694,6 +694,9 @@ components:
           example: Dogs
       xml:
         name: category
+    UserState:
+      type: string
+      enum: [active, deleted]
     User:
       type: object
       properties:
@@ -719,6 +722,10 @@ components:
         phone:
           type: string
           example: "12345"
+        state:
+          $ref: '#/components/schemas/UserState'
+          # TODO: this should not be necessary
+          x-validate-extra-tags: oneof=active deleted
         userStatus:
           type: integer
           description: User Status
