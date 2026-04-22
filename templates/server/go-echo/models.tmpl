@@ -5,7 +5,7 @@
 {{- range $key, $schema := .Doc.Components.Schemas }}
 
 // {{ $key }}{{ with $schema.Description }}: {{ . }}{{ end }}
-type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true) }}
+type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true "components" $.Doc.Components) }}
 {{- end }}
 {{- end }}
 
@@ -17,6 +17,7 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{- $schema := get . "schema" }}
 {{- $reqd := get . "required" }}
 {{- $tag := get . "tag" }}
+{{- $components := get . "components" }}
 {{- $ptr := not $reqd }}
 {{- with $schema }}
   {{- with get .Extensions "x-go-skip-optional-pointer" }}
@@ -29,8 +30,8 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
     {{- else if eq .Type "integer" }}{{ include "integer-type" (dict "schema" $schema "required" $reqd) }}
     {{- else if eq .Type "number" }}{{ include "number-type" (dict "schema" $schema "required" $reqd) }}
     {{- else if eq .Type "boolean" }}{{ include "boolean-type" (dict "schema" $schema "required" $reqd) }}
-    {{- else if eq .Type "object" }}{{ include "object-type" (dict "schema" $schema "required" $reqd) }}
-    {{- else if eq .Type "array" }}{{ include "array-type" (dict "schema" $schema "required" $reqd) }}
+    {{- else if eq .Type "object" }}{{ include "object-type" (dict "schema" $schema "required" $reqd "components" $components) }}
+    {{- else if eq .Type "array" }}{{ include "array-type" (dict "schema" $schema "required" $reqd "components" $components) }}
     {{- else }}any
     {{- end }}
   {{- end }}
@@ -42,6 +43,7 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{ define "object-type" }}
 {{- $schema := get . "schema" }}
 {{- $reqd := get . "required" }}
+{{- $components := get . "components" }}
 {{- $ptr := not $reqd }}
 {{- with get $schema.Extensions "x-go-skip-optional-pointer" }}
 {{- $ptr = false }}
@@ -63,14 +65,14 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
   {{- else }}
   {{- $tags = append $tags (include "json-tag" (dict "key" $key "required" $childReqd)) }}
   {{- end }}
-  {{- $tags = append $tags (include "validate-tag" (dict "ref" $item "required" $childReqd)) }}
+  {{- $tags = append $tags (include "validate-tag" (dict "ref" $item "required" $childReqd "components" $components)) }}
   {{- with $item.Value }}
   {{- with .Description }}
 
   // {{ . }}
   {{- end }}
   {{- end }}
-  {{ $fieldName }} {{ include "ref-type" (dict "ref" $item "required" $childReqd "tag" $key) }} `{{ $tags | join " " }}`
+  {{ $fieldName }} {{ include "ref-type" (dict "ref" $item "required" $childReqd "tag" $key "components" $components) }} `{{ $tags | join " " }}`
   {{- end }}
 }
 {{- else }}
@@ -81,12 +83,13 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{ define "array-type" }}
 {{- $schema := get . "schema" }}
 {{- $reqd := get . "required" }}
+{{- $components := get . "components" }}
 {{- $ptr := not $reqd }}
 {{- with get $schema.Extensions "x-go-skip-optional-pointer" }}
 {{- $ptr = false }}
 {{- end }}
 {{- if $ptr }}*{{ end }}
-{{- with $schema.Items }}[]{{ include "ref-type" (dict "ref" . "required" true) }}
+{{- with $schema.Items }}[]{{ include "ref-type" (dict "ref" . "required" true "components" $components) }}
 {{- else }}interface{}
 {{- end }}
 {{- end }}
@@ -141,7 +144,8 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 {{- $ref := get . "ref" }}
 {{- $reqd := get . "required" }}
 {{- $tag := get . "tag" }}
-{{- if eq $ref.Ref "" }}{{ include "schema-type" (dict "schema" $ref.Value "required" $reqd "tag" $tag) }}
+{{- $components := get . "components" }}
+{{- if eq $ref.Ref "" }}{{ include "schema-type" (dict "schema" $ref.Value "required" $reqd "tag" $tag "components" $components) }}
 {{- else }}
 {{- if not $reqd }}*{{ end }}{{ splitList "/" $ref.Ref | last }}
 {{- end }}
@@ -158,27 +162,30 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 
 {{ define "validate-tag" }}
 {{- $ref := get . "ref" }}
-{{- $reqd := get . "required" }}validate:"{{ include "validate-ref-rule" (dict "ref" $ref "required" $reqd) }}"
+{{- $reqd := get . "required" }}
+{{- $components := get . "components" }}validate:"{{ include "validate-ref-rule" (dict "ref" $ref "required" $reqd "components" $components) }}"
 {{- end }}
 
 
 {{ define "validate-ref-rule" }}
 {{- $ref := get . "ref" }}
 {{- $reqd := get . "required" }}
+{{- $components := get . "components" }}
 {{- $rules := list }}
 {{- if $reqd }}
   {{- $rules = append $rules "required" }}
 {{- else }}
   {{- $rules = append $rules "omitempty" }}
 {{- end }}
-{{- with get $ref.Extensions "x-validate-extra-tags" }}
-  {{- $rules = append $rules . }}
+{{- $schema := $ref.Value }}
+{{- if and (not $schema) $components (hasPrefix "#/components/schemas/" $ref.Ref) }}
+  {{- $schema = index $components.Schemas (splitList "/" $ref.Ref | last) }}
 {{- end }}
-{{- with $ref.Value }}
+{{- with $schema }}
   {{- with get .Extensions "x-validate-override-tags" }}
     {{- $rules = (list .) }}
   {{- else }}
-    {{- $childRules := include "validate-schema-rule" (dict "schema" $ref.Value) }}
+    {{- $childRules := include "validate-schema-rule" (dict "schema" . "components" $components) }}
     {{- if ne $childRules "" }}
       {{- $rules = append $rules $childRules }}
     {{- end }}
@@ -189,6 +196,7 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
 
 {{ define "validate-schema-rule" }}
 {{- $schema := get . "schema" }}
+{{- $components := get . "components" }}
 {{- $rules := list }}
 {{- if eq $schema.Type "string" }}
   {{- if eq $schema.Format "uuid" }}
@@ -222,7 +230,7 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true)
   {{- end }}
 {{- else if eq $schema.Type "array" }}
   {{- $rules = append $rules "dive" }}
-  {{- $rules = append $rules (include "validate-ref-rule" (dict "ref" $schema.Items "required" true)) }}
+  {{- $rules = append $rules (include "validate-ref-rule" (dict "ref" $schema.Items "required" true "components" $components)) }}
 {{- end }}
 {{- with get $schema.Extensions "x-validate-extra-tags" }}
   {{- $rules = append $rules . }}
