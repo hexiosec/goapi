@@ -178,8 +178,11 @@ type {{ $key }} {{ include "schema-type" (dict "schema" $schema "required" true 
   {{- $rules = append $rules "omitempty" }}
 {{- end }}
 {{- $schema := $ref.Value }}
-{{- if and (not $schema) $components (hasPrefix "#/components/schemas/" $ref.Ref) }}
-  {{- $schema = index $components.Schemas (splitList "/" $ref.Ref | last) }}
+{{- if and (not $schema) (hasPrefix "#/components/schemas/" $ref.Ref) }}
+  {{- $refSchema := index $components.Schemas (splitList "/" $ref.Ref | last) }}
+  {{- if and $refSchema (eq $refSchema.Type "string") }}
+    {{- $schema = $refSchema }}
+  {{- end }}
 {{- end }}
 {{- with $schema }}
   {{- with get .Extensions "x-validate-override-tags" }}
