@@ -29,7 +29,7 @@
 {{- end }}
 
 {{ define "operation-args" }}
-{{- $args := list "c echo.Context" }}
+{{- $args := list "c *echo.Context" }}
 {{- range .Parameters }}
 {{- if eq .Value.In "cookie" }}
 {{- $arg := cat (include "param-arg-name" .) "string" }}

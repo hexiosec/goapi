@@ -67,7 +67,7 @@ import (
   "regexp"
   "strings"
 
-  "github.com/labstack/echo/v4"
+  "github.com/labstack/echo/v5"
   "github.com/go-playground/validator/v10"
 )
 
@@ -140,7 +140,7 @@ func New{{ $tag }}RouteHandlers(wrapper {{ $tag }}Endpoints) *{{ $tag }}RouteHan
 
 // Validate requests to {{ $method }}:{{ $path }}
 func (r *{{ $tag }}RouteHandlers) {{ $middleware }}(next echo.HandlerFunc) echo.HandlerFunc {
-  return func(c echo.Context) error {
+  return func(c *echo.Context) error {
     {{- with .Security }}
     c.Set("security", []map[string][]string{
     {{- range . }}
@@ -180,7 +180,7 @@ func (r *{{ $tag }}RouteHandlers) {{ $middleware }}(next echo.HandlerFunc) echo.
 }
 
 // Handle requests to {{ $method }}:{{ $path }}
-func (r *{{ $tag }}RouteHandlers) {{ $handler }}(c echo.Context) error {
+func (r *{{ $tag }}RouteHandlers) {{ $handler }}(c *echo.Context) error {
   {{- $args := list "c" }}
 
   {{- range .Parameters }}
@@ -218,7 +218,11 @@ func (r *{{ $tag }}RouteHandlers) {{ $handler }}(c echo.Context) error {
   {{- end }}
   {{ with get .Extensions "x-response-body-type" }}
   if res, err := r.wrapper.{{ $wrapper }}({{ $args | join ", " }}); err == nil {
-    if !c.Response().Committed {
+    committed := false
+    if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+      committed = response.Committed
+    }
+    if !committed {
       {{- with get $op.Extensions "x-response-status" }}
       return c.JSON({{ . }}, res)
       {{- else }}
@@ -232,7 +236,11 @@ func (r *{{ $tag }}RouteHandlers) {{ $handler }}(c echo.Context) error {
   }
   {{- else }}
   if err := r.wrapper.{{ $wrapper }}({{ $args | join ", " }}); err == nil {
-    if !c.Response().Committed {
+    committed := false
+    if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+      committed = response.Committed
+    }
+    if !committed {
       {{- with get $op.Extensions "x-response-status" }}
       return c.NoContent({{ . }})
       {{- else }}
@@ -256,12 +264,12 @@ func (r *{{ $tag }}RouteHandlers) {{ $getPath }}(trimPrefix ...string) string {
 }
 
 // Register the handler and middleware for {{ $method }}:{{ $path }} at the default path
-func (r *{{ $tag }}RouteHandlers) Register{{ $wrapper }}Route(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *{{ $tag }}RouteHandlers) Register{{ $wrapper }}Route(e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
   return r.Register{{ $wrapper }}RouteAt(r.{{ $getPath }}(), e, m...)
 }
 
 // Register the handler and middleware for {{ $method }}:{{ $path }} at a custom path
-func (r *{{ $tag }}RouteHandlers) Register{{ $wrapper }}RouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *{{ $tag }}RouteHandlers) Register{{ $wrapper }}RouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
   mw := append([]echo.MiddlewareFunc{r.{{ $middleware }}}, m...)
   return e.{{ $method }}(path, r.{{ $handler }}, mw...)
 }

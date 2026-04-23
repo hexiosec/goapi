@@ -6,26 +6,26 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // Interface for User route endpoints
 type UserEndpoints interface {
 
 	// This can only be done by the logged in user.
-	CreateUser(c echo.Context, body *User) error
+	CreateUser(c *echo.Context, body *User) error
 
 	// Creates list of users with given input array
-	CreateUsersWithListInput(c echo.Context, body *CreateUsersWithListInputJSONRequest) (*User, error)
-	LoginUser(c echo.Context, query *LoginUserQuery) (*LoginUserJSON200Response, error)
-	LogoutUser(c echo.Context) error
+	CreateUsersWithListInput(c *echo.Context, body *CreateUsersWithListInputJSONRequest) (*User, error)
+	LoginUser(c *echo.Context, query *LoginUserQuery) (*LoginUserJSON200Response, error)
+	LogoutUser(c *echo.Context) error
 
 	// This can only be done by the logged in user.
-	DeleteUser(c echo.Context, username string) error
-	GetUserByName(c echo.Context, username string) (*User, error)
+	DeleteUser(c *echo.Context, username string) error
+	GetUserByName(c *echo.Context, username string) (*User, error)
 
 	// This can only be done by the logged in user.
-	UpdateUser(c echo.Context, username string, body *User) error
+	UpdateUser(c *echo.Context, username string, body *User) error
 }
 
 // Wrapper to expose UserEndpoints functions as echo handlers/middleware
@@ -77,10 +77,10 @@ func NewUserRouteHandlers(wrapper UserEndpoints) *UserRouteHandlers {
 
 // Validate requests to POST:/user
 func (r *UserRouteHandlers) CreateUserValidator(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		// Body: User
 		body := &User{}
-		if err := (&echo.DefaultBinder{}).BindBody(c, body); err != nil {
+		if err := echo.BindBody(c, body); err != nil {
 			return err
 		} else if err := r.validate.Struct(*body); err != nil {
 			return err
@@ -92,11 +92,15 @@ func (r *UserRouteHandlers) CreateUserValidator(next echo.HandlerFunc) echo.Hand
 }
 
 // Handle requests to POST:/user
-func (r *UserRouteHandlers) CreateUserHandler(c echo.Context) error {
+func (r *UserRouteHandlers) CreateUserHandler(c *echo.Context) error {
 	body := c.Get("body").(*User)
 
 	if err := r.wrapper.CreateUser(c, body); err == nil {
-		if !c.Response().Committed {
+		committed := false
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			committed = response.Committed
+		}
+		if !committed {
 			return c.NoContent(http.StatusNoContent)
 		} else {
 			return nil
@@ -115,12 +119,12 @@ func (r *UserRouteHandlers) CreateUserPath(trimPrefix ...string) string {
 }
 
 // Register the handler and middleware for POST:/user at the default path
-func (r *UserRouteHandlers) RegisterCreateUserRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *UserRouteHandlers) RegisterCreateUserRoute(e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	return r.RegisterCreateUserRouteAt(r.CreateUserPath(), e, m...)
 }
 
 // Register the handler and middleware for POST:/user at a custom path
-func (r *UserRouteHandlers) RegisterCreateUserRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *UserRouteHandlers) RegisterCreateUserRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	mw := append([]echo.MiddlewareFunc{r.CreateUserValidator}, m...)
 	return e.POST(path, r.CreateUserHandler, mw...)
 }
@@ -156,10 +160,10 @@ func (r *UserRouteHandlers) RegisterCreateUserRouteAt(path string, e EchoLike, m
 
 // Validate requests to POST:/user/createWithList
 func (r *UserRouteHandlers) CreateUsersWithListInputValidator(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		// Body: CreateUsersWithListInputJSONRequest
 		body := &CreateUsersWithListInputJSONRequest{}
-		if err := (&echo.DefaultBinder{}).BindBody(c, body); err != nil {
+		if err := echo.BindBody(c, body); err != nil {
 			return err
 		} else if err := r.validate.Struct(*body); err != nil {
 			return err
@@ -171,11 +175,15 @@ func (r *UserRouteHandlers) CreateUsersWithListInputValidator(next echo.HandlerF
 }
 
 // Handle requests to POST:/user/createWithList
-func (r *UserRouteHandlers) CreateUsersWithListInputHandler(c echo.Context) error {
+func (r *UserRouteHandlers) CreateUsersWithListInputHandler(c *echo.Context) error {
 	body := c.Get("body").(*CreateUsersWithListInputJSONRequest)
 
 	if res, err := r.wrapper.CreateUsersWithListInput(c, body); err == nil {
-		if !c.Response().Committed {
+		committed := false
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			committed = response.Committed
+		}
+		if !committed {
 			return c.JSON(200, res)
 		} else {
 			return nil
@@ -194,12 +202,12 @@ func (r *UserRouteHandlers) CreateUsersWithListInputPath(trimPrefix ...string) s
 }
 
 // Register the handler and middleware for POST:/user/createWithList at the default path
-func (r *UserRouteHandlers) RegisterCreateUsersWithListInputRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *UserRouteHandlers) RegisterCreateUsersWithListInputRoute(e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	return r.RegisterCreateUsersWithListInputRouteAt(r.CreateUsersWithListInputPath(), e, m...)
 }
 
 // Register the handler and middleware for POST:/user/createWithList at a custom path
-func (r *UserRouteHandlers) RegisterCreateUsersWithListInputRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *UserRouteHandlers) RegisterCreateUsersWithListInputRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	mw := append([]echo.MiddlewareFunc{r.CreateUsersWithListInputValidator}, m...)
 	return e.POST(path, r.CreateUsersWithListInputHandler, mw...)
 }
@@ -252,10 +260,10 @@ func (r *UserRouteHandlers) RegisterCreateUsersWithListInputRouteAt(path string,
 
 // Validate requests to GET:/user/login
 func (r *UserRouteHandlers) LoginUserValidator(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		// Query: LoginUserQuery
 		query := &LoginUserQuery{}
-		if err := (&echo.DefaultBinder{}).BindQueryParams(c, query); err != nil {
+		if err := echo.BindQueryParams(c, query); err != nil {
 			return err
 		} else if err := r.validate.Struct(*query); err != nil {
 			return err
@@ -267,11 +275,15 @@ func (r *UserRouteHandlers) LoginUserValidator(next echo.HandlerFunc) echo.Handl
 }
 
 // Handle requests to GET:/user/login
-func (r *UserRouteHandlers) LoginUserHandler(c echo.Context) error {
+func (r *UserRouteHandlers) LoginUserHandler(c *echo.Context) error {
 	query := c.Get("query").(*LoginUserQuery)
 
 	if res, err := r.wrapper.LoginUser(c, query); err == nil {
-		if !c.Response().Committed {
+		committed := false
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			committed = response.Committed
+		}
+		if !committed {
 			return c.JSON(200, res)
 		} else {
 			return nil
@@ -290,12 +302,12 @@ func (r *UserRouteHandlers) LoginUserPath(trimPrefix ...string) string {
 }
 
 // Register the handler and middleware for GET:/user/login at the default path
-func (r *UserRouteHandlers) RegisterLoginUserRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *UserRouteHandlers) RegisterLoginUserRoute(e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	return r.RegisterLoginUserRouteAt(r.LoginUserPath(), e, m...)
 }
 
 // Register the handler and middleware for GET:/user/login at a custom path
-func (r *UserRouteHandlers) RegisterLoginUserRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *UserRouteHandlers) RegisterLoginUserRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	mw := append([]echo.MiddlewareFunc{r.LoginUserValidator}, m...)
 	return e.GET(path, r.LoginUserHandler, mw...)
 }
@@ -313,16 +325,20 @@ func (r *UserRouteHandlers) RegisterLoginUserRouteAt(path string, e EchoLike, m 
 
 // Validate requests to GET:/user/logout
 func (r *UserRouteHandlers) LogoutUserValidator(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		return next(c)
 	}
 }
 
 // Handle requests to GET:/user/logout
-func (r *UserRouteHandlers) LogoutUserHandler(c echo.Context) error {
+func (r *UserRouteHandlers) LogoutUserHandler(c *echo.Context) error {
 
 	if err := r.wrapper.LogoutUser(c); err == nil {
-		if !c.Response().Committed {
+		committed := false
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			committed = response.Committed
+		}
+		if !committed {
 			return c.NoContent(http.StatusNoContent)
 		} else {
 			return nil
@@ -341,12 +357,12 @@ func (r *UserRouteHandlers) LogoutUserPath(trimPrefix ...string) string {
 }
 
 // Register the handler and middleware for GET:/user/logout at the default path
-func (r *UserRouteHandlers) RegisterLogoutUserRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *UserRouteHandlers) RegisterLogoutUserRoute(e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	return r.RegisterLogoutUserRouteAt(r.LogoutUserPath(), e, m...)
 }
 
 // Register the handler and middleware for GET:/user/logout at a custom path
-func (r *UserRouteHandlers) RegisterLogoutUserRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *UserRouteHandlers) RegisterLogoutUserRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	mw := append([]echo.MiddlewareFunc{r.LogoutUserValidator}, m...)
 	return e.GET(path, r.LogoutUserHandler, mw...)
 }
@@ -377,7 +393,7 @@ func (r *UserRouteHandlers) RegisterLogoutUserRouteAt(path string, e EchoLike, m
 
 // Validate requests to DELETE:/user/:username
 func (r *UserRouteHandlers) DeleteUserValidator(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		// Path Parameter: username
 		username := c.Param("username")
 		if err := r.validate.Var(username, "required"); err != nil {
@@ -391,11 +407,15 @@ func (r *UserRouteHandlers) DeleteUserValidator(next echo.HandlerFunc) echo.Hand
 }
 
 // Handle requests to DELETE:/user/:username
-func (r *UserRouteHandlers) DeleteUserHandler(c echo.Context) error {
+func (r *UserRouteHandlers) DeleteUserHandler(c *echo.Context) error {
 	username := c.Get("param.username").(string)
 
 	if err := r.wrapper.DeleteUser(c, username); err == nil {
-		if !c.Response().Committed {
+		committed := false
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			committed = response.Committed
+		}
+		if !committed {
 			return c.NoContent(http.StatusNoContent)
 		} else {
 			return nil
@@ -414,12 +434,12 @@ func (r *UserRouteHandlers) DeleteUserPath(trimPrefix ...string) string {
 }
 
 // Register the handler and middleware for DELETE:/user/:username at the default path
-func (r *UserRouteHandlers) RegisterDeleteUserRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *UserRouteHandlers) RegisterDeleteUserRoute(e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	return r.RegisterDeleteUserRouteAt(r.DeleteUserPath(), e, m...)
 }
 
 // Register the handler and middleware for DELETE:/user/:username at a custom path
-func (r *UserRouteHandlers) RegisterDeleteUserRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *UserRouteHandlers) RegisterDeleteUserRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	mw := append([]echo.MiddlewareFunc{r.DeleteUserValidator}, m...)
 	return e.DELETE(path, r.DeleteUserHandler, mw...)
 }
@@ -457,7 +477,7 @@ func (r *UserRouteHandlers) RegisterDeleteUserRouteAt(path string, e EchoLike, m
 
 // Validate requests to GET:/user/:username
 func (r *UserRouteHandlers) GetUserByNameValidator(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		// Path Parameter: username
 		username := c.Param("username")
 		if err := r.validate.Var(username, "required"); err != nil {
@@ -471,11 +491,15 @@ func (r *UserRouteHandlers) GetUserByNameValidator(next echo.HandlerFunc) echo.H
 }
 
 // Handle requests to GET:/user/:username
-func (r *UserRouteHandlers) GetUserByNameHandler(c echo.Context) error {
+func (r *UserRouteHandlers) GetUserByNameHandler(c *echo.Context) error {
 	username := c.Get("param.username").(string)
 
 	if res, err := r.wrapper.GetUserByName(c, username); err == nil {
-		if !c.Response().Committed {
+		committed := false
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			committed = response.Committed
+		}
+		if !committed {
 			return c.JSON(200, res)
 		} else {
 			return nil
@@ -494,12 +518,12 @@ func (r *UserRouteHandlers) GetUserByNamePath(trimPrefix ...string) string {
 }
 
 // Register the handler and middleware for GET:/user/:username at the default path
-func (r *UserRouteHandlers) RegisterGetUserByNameRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *UserRouteHandlers) RegisterGetUserByNameRoute(e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	return r.RegisterGetUserByNameRouteAt(r.GetUserByNamePath(), e, m...)
 }
 
 // Register the handler and middleware for GET:/user/:username at a custom path
-func (r *UserRouteHandlers) RegisterGetUserByNameRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *UserRouteHandlers) RegisterGetUserByNameRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	mw := append([]echo.MiddlewareFunc{r.GetUserByNameValidator}, m...)
 	return e.GET(path, r.GetUserByNameHandler, mw...)
 }
@@ -542,7 +566,7 @@ func (r *UserRouteHandlers) RegisterGetUserByNameRouteAt(path string, e EchoLike
 
 // Validate requests to PUT:/user/:username
 func (r *UserRouteHandlers) UpdateUserValidator(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		// Path Parameter: username
 		username := c.Param("username")
 		if err := r.validate.Var(username, "required"); err != nil {
@@ -553,7 +577,7 @@ func (r *UserRouteHandlers) UpdateUserValidator(next echo.HandlerFunc) echo.Hand
 
 		// Body: User
 		body := &User{}
-		if err := (&echo.DefaultBinder{}).BindBody(c, body); err != nil {
+		if err := echo.BindBody(c, body); err != nil {
 			return err
 		} else if err := r.validate.Struct(*body); err != nil {
 			return err
@@ -565,12 +589,16 @@ func (r *UserRouteHandlers) UpdateUserValidator(next echo.HandlerFunc) echo.Hand
 }
 
 // Handle requests to PUT:/user/:username
-func (r *UserRouteHandlers) UpdateUserHandler(c echo.Context) error {
+func (r *UserRouteHandlers) UpdateUserHandler(c *echo.Context) error {
 	username := c.Get("param.username").(string)
 	body := c.Get("body").(*User)
 
 	if err := r.wrapper.UpdateUser(c, username, body); err == nil {
-		if !c.Response().Committed {
+		committed := false
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			committed = response.Committed
+		}
+		if !committed {
 			return c.NoContent(http.StatusNoContent)
 		} else {
 			return nil
@@ -589,12 +617,12 @@ func (r *UserRouteHandlers) UpdateUserPath(trimPrefix ...string) string {
 }
 
 // Register the handler and middleware for PUT:/user/:username at the default path
-func (r *UserRouteHandlers) RegisterUpdateUserRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *UserRouteHandlers) RegisterUpdateUserRoute(e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	return r.RegisterUpdateUserRouteAt(r.UpdateUserPath(), e, m...)
 }
 
 // Register the handler and middleware for PUT:/user/:username at a custom path
-func (r *UserRouteHandlers) RegisterUpdateUserRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *UserRouteHandlers) RegisterUpdateUserRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	mw := append([]echo.MiddlewareFunc{r.UpdateUserValidator}, m...)
 	return e.PUT(path, r.UpdateUserHandler, mw...)
 }

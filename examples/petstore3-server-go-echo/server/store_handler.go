@@ -6,23 +6,23 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // Interface for Store route endpoints
 type StoreEndpoints interface {
 
 	// Returns a map of status codes to quantities
-	GetInventory(c echo.Context) (*GetInventoryJSON200Response, error)
+	GetInventory(c *echo.Context) (*GetInventoryJSON200Response, error)
 
 	// Place a new order in the store
-	PlaceOrder(c echo.Context, body *Order) (*Order, error)
+	PlaceOrder(c *echo.Context, body *Order) (*Order, error)
 
 	// For valid response try integer IDs with value < 1000. Anything above 1000 or nonintegers will generate API errors
-	DeleteOrder(c echo.Context, orderID string) error
+	DeleteOrder(c *echo.Context, orderID string) error
 
 	// For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions.
-	GetOrderByID(c echo.Context, orderID string) (*Order, error)
+	GetOrderByID(c *echo.Context, orderID string) (*Order, error)
 }
 
 // Wrapper to expose StoreEndpoints functions as echo handlers/middleware
@@ -61,7 +61,7 @@ func NewStoreRouteHandlers(wrapper StoreEndpoints) *StoreRouteHandlers {
 
 // Validate requests to GET:/store/inventory
 func (r *StoreRouteHandlers) GetInventoryValidator(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		c.Set("security", []map[string][]string{
 			{"api_key": []string{}},
 		})
@@ -71,10 +71,14 @@ func (r *StoreRouteHandlers) GetInventoryValidator(next echo.HandlerFunc) echo.H
 }
 
 // Handle requests to GET:/store/inventory
-func (r *StoreRouteHandlers) GetInventoryHandler(c echo.Context) error {
+func (r *StoreRouteHandlers) GetInventoryHandler(c *echo.Context) error {
 
 	if res, err := r.wrapper.GetInventory(c); err == nil {
-		if !c.Response().Committed {
+		committed := false
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			committed = response.Committed
+		}
+		if !committed {
 			return c.JSON(200, res)
 		} else {
 			return nil
@@ -93,12 +97,12 @@ func (r *StoreRouteHandlers) GetInventoryPath(trimPrefix ...string) string {
 }
 
 // Register the handler and middleware for GET:/store/inventory at the default path
-func (r *StoreRouteHandlers) RegisterGetInventoryRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *StoreRouteHandlers) RegisterGetInventoryRoute(e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	return r.RegisterGetInventoryRouteAt(r.GetInventoryPath(), e, m...)
 }
 
 // Register the handler and middleware for GET:/store/inventory at a custom path
-func (r *StoreRouteHandlers) RegisterGetInventoryRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *StoreRouteHandlers) RegisterGetInventoryRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	mw := append([]echo.MiddlewareFunc{r.GetInventoryValidator}, m...)
 	return e.GET(path, r.GetInventoryHandler, mw...)
 }
@@ -137,10 +141,10 @@ func (r *StoreRouteHandlers) RegisterGetInventoryRouteAt(path string, e EchoLike
 
 // Validate requests to POST:/store/order
 func (r *StoreRouteHandlers) PlaceOrderValidator(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		// Body: Order
 		body := &Order{}
-		if err := (&echo.DefaultBinder{}).BindBody(c, body); err != nil {
+		if err := echo.BindBody(c, body); err != nil {
 			return err
 		} else if err := r.validate.Struct(*body); err != nil {
 			return err
@@ -152,11 +156,15 @@ func (r *StoreRouteHandlers) PlaceOrderValidator(next echo.HandlerFunc) echo.Han
 }
 
 // Handle requests to POST:/store/order
-func (r *StoreRouteHandlers) PlaceOrderHandler(c echo.Context) error {
+func (r *StoreRouteHandlers) PlaceOrderHandler(c *echo.Context) error {
 	body := c.Get("body").(*Order)
 
 	if res, err := r.wrapper.PlaceOrder(c, body); err == nil {
-		if !c.Response().Committed {
+		committed := false
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			committed = response.Committed
+		}
+		if !committed {
 			return c.JSON(200, res)
 		} else {
 			return nil
@@ -175,12 +183,12 @@ func (r *StoreRouteHandlers) PlaceOrderPath(trimPrefix ...string) string {
 }
 
 // Register the handler and middleware for POST:/store/order at the default path
-func (r *StoreRouteHandlers) RegisterPlaceOrderRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *StoreRouteHandlers) RegisterPlaceOrderRoute(e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	return r.RegisterPlaceOrderRouteAt(r.PlaceOrderPath(), e, m...)
 }
 
 // Register the handler and middleware for POST:/store/order at a custom path
-func (r *StoreRouteHandlers) RegisterPlaceOrderRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *StoreRouteHandlers) RegisterPlaceOrderRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	mw := append([]echo.MiddlewareFunc{r.PlaceOrderValidator}, m...)
 	return e.POST(path, r.PlaceOrderHandler, mw...)
 }
@@ -213,7 +221,7 @@ func (r *StoreRouteHandlers) RegisterPlaceOrderRouteAt(path string, e EchoLike, 
 
 // Validate requests to DELETE:/store/order/:orderId
 func (r *StoreRouteHandlers) DeleteOrderValidator(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		// Path Parameter: orderId
 		orderID := c.Param("orderId")
 		if err := r.validate.Var(orderID, "required"); err != nil {
@@ -227,11 +235,15 @@ func (r *StoreRouteHandlers) DeleteOrderValidator(next echo.HandlerFunc) echo.Ha
 }
 
 // Handle requests to DELETE:/store/order/:orderId
-func (r *StoreRouteHandlers) DeleteOrderHandler(c echo.Context) error {
+func (r *StoreRouteHandlers) DeleteOrderHandler(c *echo.Context) error {
 	orderID := c.Get("param.order_id").(string)
 
 	if err := r.wrapper.DeleteOrder(c, orderID); err == nil {
-		if !c.Response().Committed {
+		committed := false
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			committed = response.Committed
+		}
+		if !committed {
 			return c.NoContent(http.StatusNoContent)
 		} else {
 			return nil
@@ -250,12 +262,12 @@ func (r *StoreRouteHandlers) DeleteOrderPath(trimPrefix ...string) string {
 }
 
 // Register the handler and middleware for DELETE:/store/order/:orderId at the default path
-func (r *StoreRouteHandlers) RegisterDeleteOrderRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *StoreRouteHandlers) RegisterDeleteOrderRoute(e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	return r.RegisterDeleteOrderRouteAt(r.DeleteOrderPath(), e, m...)
 }
 
 // Register the handler and middleware for DELETE:/store/order/:orderId at a custom path
-func (r *StoreRouteHandlers) RegisterDeleteOrderRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *StoreRouteHandlers) RegisterDeleteOrderRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	mw := append([]echo.MiddlewareFunc{r.DeleteOrderValidator}, m...)
 	return e.DELETE(path, r.DeleteOrderHandler, mw...)
 }
@@ -297,7 +309,7 @@ func (r *StoreRouteHandlers) RegisterDeleteOrderRouteAt(path string, e EchoLike,
 
 // Validate requests to GET:/store/order/:orderId
 func (r *StoreRouteHandlers) GetOrderByIDValidator(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		// Path Parameter: orderId
 		orderID := c.Param("orderId")
 		if err := r.validate.Var(orderID, "required"); err != nil {
@@ -311,11 +323,15 @@ func (r *StoreRouteHandlers) GetOrderByIDValidator(next echo.HandlerFunc) echo.H
 }
 
 // Handle requests to GET:/store/order/:orderId
-func (r *StoreRouteHandlers) GetOrderByIDHandler(c echo.Context) error {
+func (r *StoreRouteHandlers) GetOrderByIDHandler(c *echo.Context) error {
 	orderID := c.Get("param.order_id").(string)
 
 	if res, err := r.wrapper.GetOrderByID(c, orderID); err == nil {
-		if !c.Response().Committed {
+		committed := false
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			committed = response.Committed
+		}
+		if !committed {
 			return c.JSON(200, res)
 		} else {
 			return nil
@@ -334,12 +350,12 @@ func (r *StoreRouteHandlers) GetOrderByIDPath(trimPrefix ...string) string {
 }
 
 // Register the handler and middleware for GET:/store/order/:orderId at the default path
-func (r *StoreRouteHandlers) RegisterGetOrderByIDRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *StoreRouteHandlers) RegisterGetOrderByIDRoute(e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	return r.RegisterGetOrderByIDRouteAt(r.GetOrderByIDPath(), e, m...)
 }
 
 // Register the handler and middleware for GET:/store/order/:orderId at a custom path
-func (r *StoreRouteHandlers) RegisterGetOrderByIDRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *StoreRouteHandlers) RegisterGetOrderByIDRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	mw := append([]echo.MiddlewareFunc{r.GetOrderByIDValidator}, m...)
 	return e.GET(path, r.GetOrderByIDHandler, mw...)
 }

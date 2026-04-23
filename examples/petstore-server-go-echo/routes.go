@@ -5,14 +5,14 @@ import (
 	"net/http"
 
 	"example.com/petstore/server"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type Routes struct{}
 
 // DebugCreatePetsMiddleware prints the submitted body before the handler runs
 func DebugCreatePetsMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		body := c.Get("body").(*server.Pet)
 		log.Printf("Create Pet %#v", body)
 		return next(c)
@@ -21,22 +21,22 @@ func DebugCreatePetsMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 // CheckShowPetIDMiddleware ensures the ID is a known pet
 func CheckShowPetIDMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		petID := c.Get("param.petId").(string)
+	return func(c *echo.Context) error {
+		petID := c.Get("param.pet_id").(string)
 		if petID != "1" {
-			return echo.NewHTTPError(http.StatusNotFound)
+			return echo.NewHTTPError(http.StatusNotFound, "pet not found")
 		}
 		return next(c)
 	}
 }
 
 // CreatePets implements server.PetsEndpoints.
-func (*Routes) CreatePets(c echo.Context, body *server.Pet) error {
+func (*Routes) CreatePets(c *echo.Context, body *server.Pet) error {
 	return nil
 }
 
 // ListPets implements server.PetsEndpoints.
-func (*Routes) ListPets(c echo.Context, query *server.ListPetsQuery) (*server.Pets, error) {
+func (*Routes) ListPets(c *echo.Context, query *server.ListPetsQuery) (*server.Pets, error) {
 	return &server.Pets{
 		{
 			ID:   1,
@@ -52,7 +52,7 @@ func (*Routes) ListPets(c echo.Context, query *server.ListPetsQuery) (*server.Pe
 }
 
 // ShowPetByID implements server.PetsEndpoints.
-func (*Routes) ShowPetByID(c echo.Context, petID string) (*server.Pet, error) {
+func (*Routes) ShowPetByID(c *echo.Context, petID string) (*server.Pet, error) {
 	return &server.Pet{
 		ID:   1,
 		Name: "Gerald",

@@ -5,14 +5,14 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // Interface for Pets route endpoints
 type PetsEndpoints interface {
-	ListPets(c echo.Context, query *ListPetsQuery) (*Pets, error)
-	CreatePets(c echo.Context, body *Pet) error
-	ShowPetByID(c echo.Context, petID string) (*Pet, error)
+	ListPets(c *echo.Context, query *ListPetsQuery) (*Pets, error)
+	CreatePets(c *echo.Context, body *Pet) error
+	ShowPetByID(c *echo.Context, petID string) (*Pet, error)
 }
 
 // Wrapper to expose PetsEndpoints functions as echo handlers/middleware
@@ -67,10 +67,10 @@ func NewPetsRouteHandlers(wrapper PetsEndpoints) *PetsRouteHandlers {
 
 // Validate requests to GET:/pets
 func (r *PetsRouteHandlers) ListPetsValidator(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		// Query: ListPetsQuery
 		query := &ListPetsQuery{}
-		if err := (&echo.DefaultBinder{}).BindQueryParams(c, query); err != nil {
+		if err := echo.BindQueryParams(c, query); err != nil {
 			return err
 		} else if err := r.validate.Struct(*query); err != nil {
 			return err
@@ -82,11 +82,15 @@ func (r *PetsRouteHandlers) ListPetsValidator(next echo.HandlerFunc) echo.Handle
 }
 
 // Handle requests to GET:/pets
-func (r *PetsRouteHandlers) ListPetsHandler(c echo.Context) error {
+func (r *PetsRouteHandlers) ListPetsHandler(c *echo.Context) error {
 	query := c.Get("query").(*ListPetsQuery)
 
 	if res, err := r.wrapper.ListPets(c, query); err == nil {
-		if !c.Response().Committed {
+		committed := false
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			committed = response.Committed
+		}
+		if !committed {
 			return c.JSON(200, res)
 		} else {
 			return nil
@@ -105,12 +109,12 @@ func (r *PetsRouteHandlers) ListPetsPath(trimPrefix ...string) string {
 }
 
 // Register the handler and middleware for GET:/pets at the default path
-func (r *PetsRouteHandlers) RegisterListPetsRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *PetsRouteHandlers) RegisterListPetsRoute(e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	return r.RegisterListPetsRouteAt(r.ListPetsPath(), e, m...)
 }
 
 // Register the handler and middleware for GET:/pets at a custom path
-func (r *PetsRouteHandlers) RegisterListPetsRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *PetsRouteHandlers) RegisterListPetsRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	mw := append([]echo.MiddlewareFunc{r.ListPetsValidator}, m...)
 	return e.GET(path, r.ListPetsHandler, mw...)
 }
@@ -142,10 +146,10 @@ func (r *PetsRouteHandlers) RegisterListPetsRouteAt(path string, e EchoLike, m .
 
 // Validate requests to POST:/pets
 func (r *PetsRouteHandlers) CreatePetsValidator(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		// Body: Pet
 		body := &Pet{}
-		if err := (&echo.DefaultBinder{}).BindBody(c, body); err != nil {
+		if err := echo.BindBody(c, body); err != nil {
 			return err
 		} else if err := r.validate.Struct(*body); err != nil {
 			return err
@@ -157,11 +161,15 @@ func (r *PetsRouteHandlers) CreatePetsValidator(next echo.HandlerFunc) echo.Hand
 }
 
 // Handle requests to POST:/pets
-func (r *PetsRouteHandlers) CreatePetsHandler(c echo.Context) error {
+func (r *PetsRouteHandlers) CreatePetsHandler(c *echo.Context) error {
 	body := c.Get("body").(*Pet)
 
 	if err := r.wrapper.CreatePets(c, body); err == nil {
-		if !c.Response().Committed {
+		committed := false
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			committed = response.Committed
+		}
+		if !committed {
 			return c.NoContent(201)
 		} else {
 			return nil
@@ -180,12 +188,12 @@ func (r *PetsRouteHandlers) CreatePetsPath(trimPrefix ...string) string {
 }
 
 // Register the handler and middleware for POST:/pets at the default path
-func (r *PetsRouteHandlers) RegisterCreatePetsRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *PetsRouteHandlers) RegisterCreatePetsRoute(e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	return r.RegisterCreatePetsRouteAt(r.CreatePetsPath(), e, m...)
 }
 
 // Register the handler and middleware for POST:/pets at a custom path
-func (r *PetsRouteHandlers) RegisterCreatePetsRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *PetsRouteHandlers) RegisterCreatePetsRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	mw := append([]echo.MiddlewareFunc{r.CreatePetsValidator}, m...)
 	return e.POST(path, r.CreatePetsHandler, mw...)
 }
@@ -223,7 +231,7 @@ func (r *PetsRouteHandlers) RegisterCreatePetsRouteAt(path string, e EchoLike, m
 
 // Validate requests to GET:/pets/:petId
 func (r *PetsRouteHandlers) ShowPetByIDValidator(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		// Path Parameter: petId
 		petID := c.Param("petId")
 		if err := r.validate.Var(petID, "required,uuid"); err != nil {
@@ -237,11 +245,15 @@ func (r *PetsRouteHandlers) ShowPetByIDValidator(next echo.HandlerFunc) echo.Han
 }
 
 // Handle requests to GET:/pets/:petId
-func (r *PetsRouteHandlers) ShowPetByIDHandler(c echo.Context) error {
+func (r *PetsRouteHandlers) ShowPetByIDHandler(c *echo.Context) error {
 	petID := c.Get("param.pet_id").(string)
 
 	if res, err := r.wrapper.ShowPetByID(c, petID); err == nil {
-		if !c.Response().Committed {
+		committed := false
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			committed = response.Committed
+		}
+		if !committed {
 			return c.JSON(200, res)
 		} else {
 			return nil
@@ -260,12 +272,12 @@ func (r *PetsRouteHandlers) ShowPetByIDPath(trimPrefix ...string) string {
 }
 
 // Register the handler and middleware for GET:/pets/:petId at the default path
-func (r *PetsRouteHandlers) RegisterShowPetByIDRoute(e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *PetsRouteHandlers) RegisterShowPetByIDRoute(e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	return r.RegisterShowPetByIDRouteAt(r.ShowPetByIDPath(), e, m...)
 }
 
 // Register the handler and middleware for GET:/pets/:petId at a custom path
-func (r *PetsRouteHandlers) RegisterShowPetByIDRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) *echo.Route {
+func (r *PetsRouteHandlers) RegisterShowPetByIDRouteAt(path string, e EchoLike, m ...echo.MiddlewareFunc) echo.RouteInfo {
 	mw := append([]echo.MiddlewareFunc{r.ShowPetByIDValidator}, m...)
 	return e.GET(path, r.ShowPetByIDHandler, mw...)
 }
