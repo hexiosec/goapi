@@ -96,15 +96,15 @@ func (r *UserRouteHandlers) CreateUserHandler(c *echo.Context) error {
 	body := c.Get("body").(*User)
 
 	if err := r.wrapper.CreateUser(c, body); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.NoContent(http.StatusNoContent)
-		} else {
+		if c.Response().Header().Get(echo.HeaderLocation) != "" {
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.NoContent(http.StatusNoContent)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
@@ -334,15 +334,15 @@ func (r *UserRouteHandlers) LogoutUserValidator(next echo.HandlerFunc) echo.Hand
 func (r *UserRouteHandlers) LogoutUserHandler(c *echo.Context) error {
 
 	if err := r.wrapper.LogoutUser(c); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.NoContent(http.StatusNoContent)
-		} else {
+		if c.Response().Header().Get(echo.HeaderLocation) != "" {
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.NoContent(http.StatusNoContent)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
@@ -411,15 +411,15 @@ func (r *UserRouteHandlers) DeleteUserHandler(c *echo.Context) error {
 	username := c.Get("param.username").(string)
 
 	if err := r.wrapper.DeleteUser(c, username); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.NoContent(http.StatusNoContent)
-		} else {
+		if c.Response().Header().Get(echo.HeaderLocation) != "" {
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.NoContent(http.StatusNoContent)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
@@ -594,15 +594,15 @@ func (r *UserRouteHandlers) UpdateUserHandler(c *echo.Context) error {
 	body := c.Get("body").(*User)
 
 	if err := r.wrapper.UpdateUser(c, username, body); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.NoContent(http.StatusNoContent)
-		} else {
+		if c.Response().Header().Get(echo.HeaderLocation) != "" {
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.NoContent(http.StatusNoContent)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}

@@ -239,15 +239,15 @@ func (r *StoreRouteHandlers) DeleteOrderHandler(c *echo.Context) error {
 	orderID := c.Get("param.order_id").(string)
 
 	if err := r.wrapper.DeleteOrder(c, orderID); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.NoContent(http.StatusNoContent)
-		} else {
+		if c.Response().Header().Get(echo.HeaderLocation) != "" {
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.NoContent(http.StatusNoContent)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}

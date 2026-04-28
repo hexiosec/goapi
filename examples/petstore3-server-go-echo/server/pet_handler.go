@@ -523,15 +523,15 @@ func (r *PetRouteHandlers) DeletePetHandler(c *echo.Context) error {
 	petID := c.Get("param.pet_id").(string)
 
 	if err := r.wrapper.DeletePet(c, xAPIKey, petID); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.NoContent(http.StatusNoContent)
-		} else {
+		if c.Response().Header().Get(echo.HeaderLocation) != "" {
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.NoContent(http.StatusNoContent)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
@@ -728,15 +728,15 @@ func (r *PetRouteHandlers) UpdatePetWithFormHandler(c *echo.Context) error {
 	query := c.Get("query").(*UpdatePetWithFormQuery)
 
 	if err := r.wrapper.UpdatePetWithForm(c, petID, query); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.NoContent(http.StatusNoContent)
-		} else {
+		if c.Response().Header().Get(echo.HeaderLocation) != "" {
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.NoContent(http.StatusNoContent)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}

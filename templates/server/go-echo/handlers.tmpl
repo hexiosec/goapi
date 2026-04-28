@@ -236,19 +236,19 @@ func (r *{{ $tag }}RouteHandlers) {{ $handler }}(c *echo.Context) error {
   }
   {{- else }}
   if err := r.wrapper.{{ $wrapper }}({{ $args | join ", " }}); err == nil {
-    committed := false
-    if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-      committed = response.Committed
-    }
-    if !committed {
-      {{- with get $op.Extensions "x-response-status" }}
-      return c.NoContent({{ . }})
-      {{- else }}
-      return c.NoContent(http.StatusNoContent)
-      {{- end }}
-    } else {
+    if c.Response().Header().Get(echo.HeaderLocation) != "" {
       return nil
     }
+    if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+      if !response.Committed {
+        {{- with get $op.Extensions "x-response-status" }}
+        return c.NoContent({{ . }})
+        {{- else }}
+        return c.NoContent(http.StatusNoContent)
+        {{- end }}
+      }
+    }
+    return nil
   } else {
     return err
   }

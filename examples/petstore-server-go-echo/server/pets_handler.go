@@ -165,15 +165,15 @@ func (r *PetsRouteHandlers) CreatePetsHandler(c *echo.Context) error {
 	body := c.Get("body").(*Pet)
 
 	if err := r.wrapper.CreatePets(c, body); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.NoContent(201)
-		} else {
+		if c.Response().Header().Get(echo.HeaderLocation) != "" {
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.NoContent(201)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
