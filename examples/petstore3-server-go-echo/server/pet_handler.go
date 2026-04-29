@@ -112,15 +112,16 @@ func (r *PetRouteHandlers) AddPetHandler(c *echo.Context) error {
 	body := c.Get("body").(*CreatePet)
 
 	if res, err := r.wrapper.AddPet(c, body); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.JSON(200, res)
-		} else {
+		if c.Response().Header().Get(echo.HeaderContentType) != "" {
+			// Response overridden inside wrapper
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.JSON(200, res)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
@@ -217,15 +218,16 @@ func (r *PetRouteHandlers) UpdatePetHandler(c *echo.Context) error {
 	body := c.Get("body").(*Pet)
 
 	if res, err := r.wrapper.UpdatePet(c, body); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.JSON(200, res)
-		} else {
+		if c.Response().Header().Get(echo.HeaderContentType) != "" {
+			// Response overridden inside wrapper
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.JSON(200, res)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
@@ -320,15 +322,16 @@ func (r *PetRouteHandlers) FindPetsByStatusHandler(c *echo.Context) error {
 	query := c.Get("query").(*FindPetsByStatusQuery)
 
 	if res, err := r.wrapper.FindPetsByStatus(c, query); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.JSON(200, res)
-		} else {
+		if c.Response().Header().Get(echo.HeaderContentType) != "" {
+			// Response overridden inside wrapper
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.JSON(200, res)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
@@ -425,15 +428,16 @@ func (r *PetRouteHandlers) FindPetsByTagsHandler(c *echo.Context) error {
 	query := c.Get("query").(*FindPetsByTagsQuery)
 
 	if res, err := r.wrapper.FindPetsByTags(c, query); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.JSON(200, res)
-		} else {
+		if c.Response().Header().Get(echo.HeaderContentType) != "" {
+			// Response overridden inside wrapper
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.JSON(200, res)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
@@ -524,6 +528,7 @@ func (r *PetRouteHandlers) DeletePetHandler(c *echo.Context) error {
 
 	if err := r.wrapper.DeletePet(c, xAPIKey, petID); err == nil {
 		if c.Response().Header().Get(echo.HeaderLocation) != "" {
+			// Empty response because it's a redirect
 			return nil
 		}
 		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
@@ -622,15 +627,16 @@ func (r *PetRouteHandlers) GetPetByIDHandler(c *echo.Context) error {
 	petID := c.Get("param.pet_id").(string)
 
 	if res, err := r.wrapper.GetPetByID(c, petID); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.JSON(200, res)
-		} else {
+		if c.Response().Header().Get(echo.HeaderContentType) != "" {
+			// Response overridden inside wrapper
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.JSON(200, res)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
@@ -729,6 +735,7 @@ func (r *PetRouteHandlers) UpdatePetWithFormHandler(c *echo.Context) error {
 
 	if err := r.wrapper.UpdatePetWithForm(c, petID, query); err == nil {
 		if c.Response().Header().Get(echo.HeaderLocation) != "" {
+			// Empty response because it's a redirect
 			return nil
 		}
 		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
@@ -840,15 +847,16 @@ func (r *PetRouteHandlers) UploadFileHandler(c *echo.Context) error {
 	query := c.Get("query").(*UploadFileQuery)
 
 	if res, err := r.wrapper.UploadFile(c, petID, query); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.JSON(200, res)
-		} else {
+		if c.Response().Header().Get(echo.HeaderContentType) != "" {
+			// Response overridden inside wrapper
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.JSON(200, res)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}

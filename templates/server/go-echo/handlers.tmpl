@@ -218,25 +218,27 @@ func (r *{{ $tag }}RouteHandlers) {{ $handler }}(c *echo.Context) error {
   {{- end }}
   {{ with get .Extensions "x-response-body-type" }}
   if res, err := r.wrapper.{{ $wrapper }}({{ $args | join ", " }}); err == nil {
-    committed := false
-    if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-      committed = response.Committed
-    }
-    if !committed {
-      {{- with get $op.Extensions "x-response-status" }}
-      return c.JSON({{ . }}, res)
-      {{- else }}
-      return c.JSON(http.StatusOK, res)
-      {{- end }}
-    } else {
+    if c.Response().Header().Get(echo.HeaderContentType) != "" {
+      // Response overridden inside wrapper
       return nil
     }
+    if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+      if !response.Committed  {
+        {{- with get $op.Extensions "x-response-status" }}
+        return c.JSON({{ . }}, res)
+        {{- else }}
+        return c.JSON(http.StatusOK, res)
+        {{- end }}
+      }
+    }
+    return nil
   } else {
     return err
   }
   {{- else }}
   if err := r.wrapper.{{ $wrapper }}({{ $args | join ", " }}); err == nil {
     if c.Response().Header().Get(echo.HeaderLocation) != "" {
+      // Empty response because it's a redirect
       return nil
     }
     if response, err := echo.UnwrapResponse(c.Response()); err == nil {

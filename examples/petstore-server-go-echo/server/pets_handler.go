@@ -86,15 +86,16 @@ func (r *PetsRouteHandlers) ListPetsHandler(c *echo.Context) error {
 	query := c.Get("query").(*ListPetsQuery)
 
 	if res, err := r.wrapper.ListPets(c, query); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.JSON(200, res)
-		} else {
+		if c.Response().Header().Get(echo.HeaderContentType) != "" {
+			// Response overridden inside wrapper
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.JSON(200, res)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
@@ -166,6 +167,7 @@ func (r *PetsRouteHandlers) CreatePetsHandler(c *echo.Context) error {
 
 	if err := r.wrapper.CreatePets(c, body); err == nil {
 		if c.Response().Header().Get(echo.HeaderLocation) != "" {
+			// Empty response because it's a redirect
 			return nil
 		}
 		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
@@ -249,15 +251,16 @@ func (r *PetsRouteHandlers) ShowPetByIDHandler(c *echo.Context) error {
 	petID := c.Get("param.pet_id").(string)
 
 	if res, err := r.wrapper.ShowPetByID(c, petID); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.JSON(200, res)
-		} else {
+		if c.Response().Header().Get(echo.HeaderContentType) != "" {
+			// Response overridden inside wrapper
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.JSON(200, res)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}

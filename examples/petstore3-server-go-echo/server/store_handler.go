@@ -74,15 +74,16 @@ func (r *StoreRouteHandlers) GetInventoryValidator(next echo.HandlerFunc) echo.H
 func (r *StoreRouteHandlers) GetInventoryHandler(c *echo.Context) error {
 
 	if res, err := r.wrapper.GetInventory(c); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.JSON(200, res)
-		} else {
+		if c.Response().Header().Get(echo.HeaderContentType) != "" {
+			// Response overridden inside wrapper
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.JSON(200, res)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
@@ -160,15 +161,16 @@ func (r *StoreRouteHandlers) PlaceOrderHandler(c *echo.Context) error {
 	body := c.Get("body").(*Order)
 
 	if res, err := r.wrapper.PlaceOrder(c, body); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.JSON(200, res)
-		} else {
+		if c.Response().Header().Get(echo.HeaderContentType) != "" {
+			// Response overridden inside wrapper
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.JSON(200, res)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
@@ -240,6 +242,7 @@ func (r *StoreRouteHandlers) DeleteOrderHandler(c *echo.Context) error {
 
 	if err := r.wrapper.DeleteOrder(c, orderID); err == nil {
 		if c.Response().Header().Get(echo.HeaderLocation) != "" {
+			// Empty response because it's a redirect
 			return nil
 		}
 		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
@@ -327,15 +330,16 @@ func (r *StoreRouteHandlers) GetOrderByIDHandler(c *echo.Context) error {
 	orderID := c.Get("param.order_id").(string)
 
 	if res, err := r.wrapper.GetOrderByID(c, orderID); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.JSON(200, res)
-		} else {
+		if c.Response().Header().Get(echo.HeaderContentType) != "" {
+			// Response overridden inside wrapper
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.JSON(200, res)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}

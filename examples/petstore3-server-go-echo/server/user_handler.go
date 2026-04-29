@@ -97,6 +97,7 @@ func (r *UserRouteHandlers) CreateUserHandler(c *echo.Context) error {
 
 	if err := r.wrapper.CreateUser(c, body); err == nil {
 		if c.Response().Header().Get(echo.HeaderLocation) != "" {
+			// Empty response because it's a redirect
 			return nil
 		}
 		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
@@ -179,15 +180,16 @@ func (r *UserRouteHandlers) CreateUsersWithListInputHandler(c *echo.Context) err
 	body := c.Get("body").(*CreateUsersWithListInputJSONRequest)
 
 	if res, err := r.wrapper.CreateUsersWithListInput(c, body); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.JSON(200, res)
-		} else {
+		if c.Response().Header().Get(echo.HeaderContentType) != "" {
+			// Response overridden inside wrapper
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.JSON(200, res)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
@@ -279,15 +281,16 @@ func (r *UserRouteHandlers) LoginUserHandler(c *echo.Context) error {
 	query := c.Get("query").(*LoginUserQuery)
 
 	if res, err := r.wrapper.LoginUser(c, query); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.JSON(200, res)
-		} else {
+		if c.Response().Header().Get(echo.HeaderContentType) != "" {
+			// Response overridden inside wrapper
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.JSON(200, res)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
@@ -335,6 +338,7 @@ func (r *UserRouteHandlers) LogoutUserHandler(c *echo.Context) error {
 
 	if err := r.wrapper.LogoutUser(c); err == nil {
 		if c.Response().Header().Get(echo.HeaderLocation) != "" {
+			// Empty response because it's a redirect
 			return nil
 		}
 		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
@@ -412,6 +416,7 @@ func (r *UserRouteHandlers) DeleteUserHandler(c *echo.Context) error {
 
 	if err := r.wrapper.DeleteUser(c, username); err == nil {
 		if c.Response().Header().Get(echo.HeaderLocation) != "" {
+			// Empty response because it's a redirect
 			return nil
 		}
 		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
@@ -495,15 +500,16 @@ func (r *UserRouteHandlers) GetUserByNameHandler(c *echo.Context) error {
 	username := c.Get("param.username").(string)
 
 	if res, err := r.wrapper.GetUserByName(c, username); err == nil {
-		committed := false
-		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
-			committed = response.Committed
-		}
-		if !committed {
-			return c.JSON(200, res)
-		} else {
+		if c.Response().Header().Get(echo.HeaderContentType) != "" {
+			// Response overridden inside wrapper
 			return nil
 		}
+		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
+			if !response.Committed {
+				return c.JSON(200, res)
+			}
+		}
+		return nil
 	} else {
 		return err
 	}
@@ -595,6 +601,7 @@ func (r *UserRouteHandlers) UpdateUserHandler(c *echo.Context) error {
 
 	if err := r.wrapper.UpdateUser(c, username, body); err == nil {
 		if c.Response().Header().Get(echo.HeaderLocation) != "" {
+			// Empty response because it's a redirect
 			return nil
 		}
 		if response, err := echo.UnwrapResponse(c.Response()); err == nil {
